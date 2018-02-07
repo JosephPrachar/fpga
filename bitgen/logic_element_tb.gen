@@ -1,0 +1,10 @@
+# Create a logic element module
+createmodule ble
+
+# Set the lut to have 0xF0
+setvalue ble.4-lut 16 1111111100000000
+
+# Output bitstream
+printbitstream
+
+

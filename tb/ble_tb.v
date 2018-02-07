@@ -34,7 +34,7 @@ module ble_tb();
     reg [18:0] last_settings;
     integer i;
     
-    BLE ble_i(
+    logic_element ble_i(
         .prog_in(prog_in),
         .prog_clk(prog_clk),
         .prog_en(prog_en),

@@ -15,55 +15,56 @@
 
 # Only create the bitstream for the logic cluster for testing with verilog
 createmodule logiccluster
+printnames
 
 ############################# ble 0 ###########################################
 # ~A & B
-setvalue lc.ic0.ble.4-lut 16 0100010001000100
+setvalue lc.ble0.4-lut 16 0100010001000100
 # configure flip flop useage and internal ble feedback path
-setvalue lc.ic0.ble.ff_out_to_a 1
-setvalue lc.ic0.ble.ff_out_to_out 1
+setvalue lc.ble0.ff_out_to_a 1
+setvalue lc.ble0.ff_out_to_out 1
 # Set interconnect matrix to send input[5] (lc input[0]) to second ble input B
 # This is the counter enable
-setvalue lc.ic0.progmux1.sel 4 0101
+setvalue lc.ic.ble0in1.sel 4 0101
 
 ############################# ble 1 ###########################################
 # A ^ B
-setvalue lc.ic1.ble.4-lut 16 0110011001100110
+setvalue lc.ble1.4-lut 16 0110011001100110
 # configure flip flop useage and internal ble feedback path
-setvalue lc.ic1.ble.ff_out_to_a 1
-setvalue lc.ic1.ble.ff_out_to_out 1
+setvalue lc.ble1.ff_out_to_a 1
+setvalue lc.ble1.ff_out_to_out 1
 # Set interconnect matrix to send input[0] (output of first ble) to second ble
 # input B
-setvalue lc.ic1.progmux1.sel 4 0000
+setvalue lc.ic.ble1in1.sel 4 0000
 
 ############################# ble 2 ###########################################
 # A ^ (B & C)
-setvalue lc.ic2.ble.4-lut 16 0110101001101010
+setvalue lc.ble2.4-lut 16 0110101001101010
 # configure flip flop useage and internal ble feedback path
-setvalue lc.ic2.ble.ff_out_to_a 1
-setvalue lc.ic2.ble.ff_out_to_out 1
+setvalue lc.ble2.ff_out_to_a 1
+setvalue lc.ble2.ff_out_to_out 1
 # Set interconnect matrix to sent input[0] (output of first ble) to third ble 
 # input B
-setvalue lc.ic2.progmux1.sel 4 0000
+setvalue lc.ic.ble2in1.sel 4 0000
 # Set interconnect matrix to sent input[1] (output of second ble) to third ble
 # input C
-setvalue lc.ic2.progmux2.sel 4 0001
+setvalue lc.ic.ble2in2.sel 4 0001
 
 ############################# ble 3 ###########################################
 # A ^ (B & C & D)
-setvalue lc.ic3.ble.4-lut 16 0110101010101010
+setvalue lc.ble3.4-lut 16 0110101010101010
 # configure flip flop useage and internal ble feedback path
-setvalue lc.ic3.ble.ff_out_to_a 1
-setvalue lc.ic3.ble.ff_out_to_out 1
+setvalue lc.ble3.ff_out_to_a 1
+setvalue lc.ble3.ff_out_to_out 1
 # Set interconnect matrix to sent input[0] (output of first ble) to fourth ble 
 # input B
-setvalue lc.ic3.progmux1.sel 4 0000
+setvalue lc.ic.ble3in1.sel 4 0000
 # Set interconnect matrix to sent input[1] (output of second ble) to fourth ble
 # input C
-setvalue lc.ic3.progmux2.sel 4 0001
+setvalue lc.ic.ble3in2.sel 4 0001
 # Set interconnect matrix to sent input[2] (output of third ble) to fourth ble
 # input D
-setvalue lc.ic3.progmux3.sel 4 0010
+setvalue lc.ic.ble3in3.sel 4 0010
 
 # Output bitstream
 printbitstream

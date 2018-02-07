@@ -29,7 +29,7 @@ public abstract class Module {
         }
         for (int i = 0; i < fields.length; i++) {
             ControlBits cur = fields[i];
-            for (int j = 0; j < cur.values.length; j++) {
+            for (int j = cur.values.length - 1; j >= 0; j--) {
                 toReturn[cur_pos++] = cur.values[j];
             }
         }
@@ -99,10 +99,16 @@ public abstract class Module {
 
     public String GetNames() {
         String names = "";
-        for (ControlBits i : fields)
-            names += i.name + " " + ((Integer) i.values.length).toString() + "\n";
-        for (Module i : subModules)
-            names += i.GetNames();
+        for (int i = subModules.length - 1; i >= 0; i--) {
+            names = names + subModules[i].GetNames();
+
+        }
+        for (int i = 0; i < fields.length; i++) {
+            ControlBits cur = fields[i];
+            for (int j = 0; j < cur.values.length; j++) {
+                names = names + cur.name + " " + ((Integer) cur.values.length).toString() + "\n";
+            }
+        }
         return names;
     }
 

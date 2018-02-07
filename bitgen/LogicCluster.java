@@ -5,7 +5,7 @@ public class LogicCluster extends Module {
         this.subModules[0] = new ConnectionBox(name+".ic", 16, 20);
         for (int i = 1; i < 6; i++)
             this.subModules[i] = new LogicElement(name+".ble"+
-                                        ((Integer)i).toString());
+                                        ((Integer)(i-1)).toString());
 
     }
 }
