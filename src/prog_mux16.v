@@ -1,0 +1,26 @@
+`timescale 1ns / 1ps
+
+module prog_mux16(
+    input [15:0] in,
+    input prog_in,
+    input prog_clk,
+    input prog_en,
+    output out,
+    output prog_out
+    );
+
+    reg [3:0] control;
+    
+    // Create shift register out of "control"
+    always @(posedge prog_clk) begin
+        if (prog_en == 1)
+            control <= { control[2:0], prog_in };
+    end
+    // Keep chain of shift registers going to next CLB
+    assign prog_out = control[3];
+    
+    mux16 mux(
+        .in(in),
+        .sel(control),
+        .out(out));
+endmodule
