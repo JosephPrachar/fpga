@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module disjoint_switch #(parameter WIDTH = 3)(
+module disjoint_switch #(parameter WIDTH = 10)(
     input prog_in,
     input prog_clk,
     input prog_en,
@@ -30,7 +30,7 @@ module disjoint_switch #(parameter WIDTH = 3)(
     inout [WIDTH - 1:0] b,
     output prog_out
     );
-    parameter NUM_BITS = WIDTH * 4 * 2;
+    localparam NUM_BITS = WIDTH * 4 * 2;
     
     
     reg [NUM_BITS - 1:0] prog_control;
@@ -52,6 +52,7 @@ module disjoint_switch #(parameter WIDTH = 3)(
     genvar index;
     generate
     for (index=0; index < WIDTH; index=index+1) begin
+        // TODO replace with prog mux
         assign l[index] = control[1 + (index * 2):(index * 2)] == 2'd0 ? 1'bz :
                           control[1 + (index * 2):(index * 2)] == 2'd1 ? r[index] :
                           control[1 + (index * 2):(index * 2)] == 2'd2 ? t[index] :

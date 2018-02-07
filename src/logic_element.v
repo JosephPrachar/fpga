@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module BLE(
+module logic_element(
     input prog_in,
     input prog_clk,
     input prog_en,

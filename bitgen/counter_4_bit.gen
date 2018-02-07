@@ -1,0 +1,71 @@
+###############################################################################
+# This file will generate a 4-bit counter with enable when piped into the
+# bit gen tool: example run below from command line
+#
+# jprachar$ cat counter_4_bit.gen > java Main
+#
+# This tool and script will print out a string of bits on the console and write
+# the bits to a file called counter_4_bit.gen. The bits printed to the console
+# can be copy pasted directly into a verilog testbench and read from lsb to msb
+# the file bit string is reversed so that when opened the file can be read
+# directly from start to finish into the device being programed
+#
+# - Joseph Prachar (jprachar@calpoly.edu)
+###############################################################################
+
+# Only create the bitstream for the logic cluster for testing with verilog
+createmodule logiccluster
+
+############################# ble 0 ###########################################
+# ~A & B
+setvalue lc.ic0.ble.4-lut 16 0100010001000100
+# configure flip flop useage and internal ble feedback path
+setvalue lc.ic0.ble.ff_out_to_a 1
+setvalue lc.ic0.ble.ff_out_to_out 1
+# Set interconnect matrix to send input[5] (lc input[0]) to second ble input B
+# This is the counter enable
+setvalue lc.ic0.progmux1.sel 4 0101
+
+############################# ble 1 ###########################################
+# A ^ B
+setvalue lc.ic1.ble.4-lut 16 0110011001100110
+# configure flip flop useage and internal ble feedback path
+setvalue lc.ic1.ble.ff_out_to_a 1
+setvalue lc.ic1.ble.ff_out_to_out 1
+# Set interconnect matrix to send input[0] (output of first ble) to second ble
+# input B
+setvalue lc.ic1.progmux1.sel 4 0000
+
+############################# ble 2 ###########################################
+# A ^ (B & C)
+setvalue lc.ic2.ble.4-lut 16 0110101001101010
+# configure flip flop useage and internal ble feedback path
+setvalue lc.ic2.ble.ff_out_to_a 1
+setvalue lc.ic2.ble.ff_out_to_out 1
+# Set interconnect matrix to sent input[0] (output of first ble) to third ble 
+# input B
+setvalue lc.ic2.progmux1.sel 4 0000
+# Set interconnect matrix to sent input[1] (output of second ble) to third ble
+# input C
+setvalue lc.ic2.progmux2.sel 4 0001
+
+############################# ble 3 ###########################################
+# A ^ (B & C & D)
+setvalue lc.ic3.ble.4-lut 16 0110101010101010
+# configure flip flop useage and internal ble feedback path
+setvalue lc.ic3.ble.ff_out_to_a 1
+setvalue lc.ic3.ble.ff_out_to_out 1
+# Set interconnect matrix to sent input[0] (output of first ble) to fourth ble 
+# input B
+setvalue lc.ic3.progmux1.sel 4 0000
+# Set interconnect matrix to sent input[1] (output of second ble) to fourth ble
+# input C
+setvalue lc.ic3.progmux2.sel 4 0001
+# Set interconnect matrix to sent input[2] (output of third ble) to fourth ble
+# input D
+setvalue lc.ic3.progmux3.sel 4 0010
+
+# Output bitstream
+printbitstream
+printbitstream counter_4_bit.bit
+

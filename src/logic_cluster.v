@@ -1,61 +1,59 @@
 `timescale 1ns / 1ps
 
-module logic_cluster(
+module logic_cluster #(parameter NUM_BLE = 5, parameter NUM_INPUTS = 11)( // these should add to a nice power of two
     input prog_in,
     input prog_clk,
     input prog_en,
-    input [10:0] in,
+    input [NUM_INPUTS - 1:0] in,
     input clk,
-    output [4:0] out,
+    output [NUM_BLE - 1:0] out,
     output prog_out
     );
     
-    wire [4:0] output_reg;
-    wire [3:0] prog_conn;
+    wire [NUM_BLE * 4 - 1:0] ble_inputs;
+    wire [NUM_BLE - 1:0] ble_outputs;
+    wire [NUM_BLE - 1:0] prog_connect;
     
-    assign out = output_reg;
-    interconnect_matrix ble_0(
+    assign out = ble_outputs;
+    
+    connection_box interconnect(
         .prog_in(prog_in),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({in, output_reg}),
-        .clk(clk),
-        .prog_out(prog_conn[0]),
-        .out(output_reg[0]));    
-        
-    interconnect_matrix ble_1(
-        .prog_in(prog_conn[0]),
+        .in({in, ble_outputs}),
+        .prog_out(prog_connect[0]),
+        .out(ble_inputs));  
+    
+    logic_element ble_first(
+        .prog_in(prog_connect[0]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({in, output_reg}),
         .clk(clk),
-        .prog_out(prog_conn[1]),
-        .out(output_reg[1]));
+        .in(ble_inputs[3:0]),
+        .prog_out(prog_connect[1]),
+        .out(ble_outputs[0]));
         
-    interconnect_matrix ble_2(
-        .prog_in(prog_conn[1]),
+    genvar index;
+    generate
+    for (index=1; index < NUM_BLE - 1; index=index+1) begin
+        logic_element ble_i(
+        .prog_in(prog_connect[index]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({in, output_reg}),
         .clk(clk),
-        .prog_out(prog_conn[2]),
-        .out(output_reg[2]));
-        
-    interconnect_matrix ble_3(
-        .prog_in(prog_conn[2]),
+        .in(ble_inputs[index * 4 + 3: index * 4]),
+        .prog_out(prog_connect[index + 1]),
+        .out(ble_outputs[index]));
+    end
+    endgenerate
+    
+    logic_element ble_last(
+        .prog_in(prog_connect[NUM_BLE - 1]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({in, output_reg}),
         .clk(clk),
-        .prog_out(prog_conn[3]),
-        .out(output_reg[3]));
-        
-    interconnect_matrix ble_4(
-        .prog_in(prog_conn[3]),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .in({in, output_reg}),
-        .clk(clk),
+        .in(ble_inputs[3:0]),
         .prog_out(prog_out),
-        .out(output_reg[4]));
+        .out(ble_outputs[NUM_BLE - 1]));
+
 endmodule

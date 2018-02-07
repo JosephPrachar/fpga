@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module connection_box #(parameter INPUTS = 16, parameter OUTPUTS = 20)(
+module conn #(parameter INPUTS = 16, parameter OUTPUTS = 20)(
     input prog_in,
     input prog_clk,
     input prog_en,
