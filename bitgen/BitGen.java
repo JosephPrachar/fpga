@@ -20,7 +20,11 @@ public class BitGen {
         boolean done = false;
 
         while (!done && scanner.hasNextLine()) {
-            if (args.length != 1) System.out.print("Bit Gen> ");
+            if (args.length != 1) {
+                System.out.print("Bit Gen> ");
+                System.out.flush();
+
+            }
             String in = scanner.nextLine();
             if (in.isEmpty() || in.charAt(0) == '#') continue;
             if (args.length == 1) {
@@ -30,29 +34,7 @@ public class BitGen {
             String[] in_args = in.split(" ", 0);
 
             if (in_args[0].equals("createmodule")) {
-                if (in_args.length != 2) {
-                    System.out.println("Usage: createmodule <fpga|logiccluster|interconnectmatrix|ble|progmux|ioblock>");
-                    continue;
-                }
-
-                if (in_args[1].equals("fpga")) {
-                    mod = new FPGA("fpga");
-                } else if (in_args[1].equals("logiccluster")) {
-                    mod = new LogicCluster("lc");
-                } else if (in_args[1].equals("interconnectmatrix")) {
-                    mod = new ConnectionBox("ic", 5, 10);
-                } else if (in_args[1].equals("ble")) {
-                    mod = new LogicElement("ble");
-                } else if (in_args[1].equals("progmux")) {
-                    mod = new ProgMux("progmux", 4);
-                } else if (in_args[1].equals("ioblock")) {
-                    mod = new IOBlock("ioblock");
-                } else if (in_args[1].equals("switch")) {
-                    mod = new Switch("switch", 3);
-                } else {
-                    System.out.println("Usage: createmodule <fpga|logiccluster|interconnectmatrix|ble|progmux|ioblock>");
-                }
-
+                mod = CreateModule(in_args);
             } else if (in_args[0].equals("setvalue")) {
                 if (mod == null) {
                     System.out.println("Must call createmodule before values can be set");
@@ -72,6 +54,7 @@ public class BitGen {
                     to_parse = in_args[2];
                 }
                 int success = 0, fail = 0;
+                // TODO: Fix this to read how numbers should read...
                 for (int i = 0; i < length; i++) {
                     if (mod.SetValue(in_args[1], i, (byte)(to_parse.charAt(i) == '0' ? 0 : 1))) {
                         success++;
@@ -87,7 +70,7 @@ public class BitGen {
                 }
                 if (!mod.IsValid()) {
                     System.out.println("Setup not valid");
-                    continue;
+                    //continue;
                 }
                 byte[] data = mod.GetProgStream();
                 if (in_args.length == 1) {
@@ -125,6 +108,30 @@ public class BitGen {
         }
     }
 
+
+    public static Module CreateModule(String[] args) {
+        if (args[1].equals("fpga")) {
+            return new FPGA("fpga");
+        } else if (args[1].equals("logiccluster")) {
+            return new LogicCluster("lc");
+        } else if (args[1].equals("interconnectmatrix") && args.length != 4) {
+            int inputs = Integer.parseInt(args[2]);
+            int outputs = Integer.parseInt(args[3]);
+            return new ConnectionBox("ic", inputs, outputs);
+        } else if (args[1].equals("ble")) {
+            return new LogicElement("ble");
+        } else if (args[1].equals("progmux")) {
+            return new ProgMux("progmux", 4);
+        } else if (args[1].equals("ioblock")) {
+            return new IOBlock("ioblock");
+        } else if (args[1].equals("switch")) {
+            int width = Integer.parseInt(args[2]);
+            return new Switch("switch", width);
+        }
+
+        System.out.println("Usage: createmodule <fpga|logiccluster|interconnectmatrix|ble|progmux|ioblock>");
+        return null;
+    }
     public static void PrintDataStream(byte[] data) {
         System.out.println("Length: " + data.length);
         for (int i = 0; i < data.length; i++) {

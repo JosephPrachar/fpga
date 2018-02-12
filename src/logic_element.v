@@ -46,7 +46,7 @@ module logic_element(
 
     assign out = output_reg;
     
-    mux16 mux(
+    mux #(4) mux_i(
         .in(control[15:0]),
         .sel(input_reg),
         .out(lut4_out));

@@ -32,24 +32,6 @@ module io_block(
     // Keep chain of shift registers going to next CLB
     assign prog_out = prog_control[`LAST];
     
-    reg fpga_wire;
-    reg io_pad_wire;
-    
-    assign io_pad = io_pad_wire;
-    assign fpga   = fpga_wire;
-    
-    always @(io_pad or fpga) begin
-        io_pad_wire <= 1'dz;
-        fpga_wire <= 1'dz;
-        if (control[`DIR] == `OUTPUT)
-            io_pad_wire <= fpga;
-        else
-            if ((control[`PULL_UP] || control[`PULL_DOWN]) && (io_pad == 1'dx || io_pad == 1'dz))
-                if (control[`PULL_UP])
-                    fpga_wire <= 1'd1;
-                else
-                    fpga_wire <= 1'd0;
-            else
-              fpga_wire <= io_pad;
-    end
+    assign fpga   = (control[`DIR] == `INPUT) ? io_pad : 'dz;
+    assign io_pad = (control[`DIR] == `INPUT) ? 'dz    : fpga;
 endmodule

@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module disjoint_switch #(parameter WIDTH = 10)(
+module disjoint_switch #(parameter WIDTH = 3)(
     input prog_in,
     input prog_clk,
     input prog_en,
@@ -30,48 +30,47 @@ module disjoint_switch #(parameter WIDTH = 10)(
     inout [WIDTH - 1:0] b,
     output prog_out
     );
-    localparam NUM_BITS = WIDTH * 4 * 2;
+    localparam NUM_MUX = WIDTH * 4;
     
-    
-    reg [NUM_BITS - 1:0] prog_control;
-    reg [NUM_BITS - 1:0] control;
-    
-    // Create shift register out of control
-    always @(posedge prog_clk) begin
-        if (prog_en == 1)
-            prog_control <= { prog_control[NUM_BITS - 2:0], prog_in };
-    end
-    
-    always @(negedge prog_en) begin
-        control <= prog_control;
-    end
-    
-    // Keep chain of shift registers going to next CLB
-    assign prog_out = prog_control[NUM_BITS - 1];
+    wire [NUM_MUX:0]prog_connect;
+    assign prog_connect[0] = prog_in;
+    assign prog_out = prog_connect[NUM_MUX];
     
     genvar index;
     generate
     for (index=0; index < WIDTH; index=index+1) begin
-        // TODO replace with prog mux
-        assign l[index] = control[1 + (index * 2):(index * 2)] == 2'd0 ? 1'bz :
-                          control[1 + (index * 2):(index * 2)] == 2'd1 ? r[index] :
-                          control[1 + (index * 2):(index * 2)] == 2'd2 ? t[index] :
-                          b[index];
-                          
-        assign t[index] = control[1 + (index * 2) + (WIDTH * 2):(index * 2) + (WIDTH * 2)] == 2'd0 ? 1'bz :
-                          control[1 + (index * 2) + (WIDTH * 2):(index * 2) + (WIDTH * 2)] == 2'd1 ? b[index] :
-                          control[1 + (index * 2) + (WIDTH * 2):(index * 2) + (WIDTH * 2)] == 2'd2 ? l[index] :
-                          r[index];
-                          
-        assign r[index] = control[1 + (index * 2) + (WIDTH * 4):(index * 2) + (WIDTH * 4)] == 2'd0 ? 1'bz :
-                          control[1 + (index * 2) + (WIDTH * 4):(index * 2) + (WIDTH * 4)] == 2'd1 ? t[index] :
-                          control[1 + (index * 2) + (WIDTH * 4):(index * 2) + (WIDTH * 4)] == 2'd2 ? b[index] :
-                          l[index];
-                          
-        assign b[index] = control[1 + (index * 2) + (WIDTH * 6):(index * 2) + (WIDTH * 6)] == 2'd0 ? 1'bz :
-                          control[1 + (index * 2) + (WIDTH * 6):(index * 2) + (WIDTH * 6)] == 2'd1 ? l[index] :
-                          control[1 + (index * 2) + (WIDTH * 6):(index * 2) + (WIDTH * 6)] == 2'd2 ? r[index] :
-                          t[index];
+        wire [3:0] left   = { b[index], r[index], t[index], 1'dz };
+        wire [3:0] top    = { l[index], b[index], r[index], 1'dz };
+        wire [3:0] right  = { t[index], l[index], b[index], 1'dz };
+        wire [3:0] bottom = { r[index], t[index], l[index], 1'dz };
+        prog_mux #(2) mux_left (
+            .in(left),
+            .prog_in(prog_connect[index]),
+            .prog_clk(prog_clk),
+            .prog_en(prog_en),
+            .out(l[index]),
+            .prog_out(prog_connect[index + 1]));
+        prog_mux #(2) mux_top (
+            .in(top),
+            .prog_in(prog_connect[index + WIDTH * 1]),
+            .prog_clk(prog_clk),
+            .prog_en(prog_en),
+            .out(t[index]),
+            .prog_out(prog_connect[index + WIDTH * 1 + 1]));
+        prog_mux #(2) mux_right (
+            .in(right),
+            .prog_in(prog_connect[index + WIDTH * 2]),
+            .prog_clk(prog_clk),
+            .prog_en(prog_en),
+            .out(r[index]),
+            .prog_out(prog_connect[index + WIDTH * 2 + 1]));
+        prog_mux #(2) mux_bottom (
+            .in(bottom),
+            .prog_in(prog_connect[index + WIDTH * 3]),
+            .prog_clk(prog_clk),
+            .prog_en(prog_en),
+            .out(b[index]),
+            .prog_out(prog_connect[index + WIDTH * 3 + 1]));
     end
     endgenerate
     

@@ -1,0 +1,20 @@
+# create a switch box for testing width=3
+createmodule switch 3
+
+printnames
+
+
+# currently numbers are read in left to right...
+setvalue switch.right0.sel 2 10
+setvalue switch.right1.sel 2 10
+setvalue switch.right2.sel 2 10
+
+setvalue switch.top0.sel 2 10
+setvalue switch.top1.sel 2 10
+setvalue switch.top2.sel 2 10
+
+
+# Output bitstream
+printbitstream
+
+

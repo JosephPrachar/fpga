@@ -105,9 +105,9 @@ public abstract class Module {
         }
         for (int i = 0; i < fields.length; i++) {
             ControlBits cur = fields[i];
-            for (int j = 0; j < cur.values.length; j++) {
+            //for (int j = 0; j < cur.values.length; j++) {
                 names = names + cur.name + " " + ((Integer) cur.values.length).toString() + "\n";
-            }
+            //}
         }
         return names;
     }
