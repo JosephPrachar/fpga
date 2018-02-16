@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module connection_box #(parameter INPUTS = 16, parameter OUTPUTS = 20)(
+module connection_box #(parameter LOG_INPUTS = 4, parameter INPUTS = 16, parameter OUTPUTS = 20)(
     input prog_in,
     input prog_clk,
     input prog_en,
@@ -16,7 +16,7 @@ module connection_box #(parameter INPUTS = 16, parameter OUTPUTS = 20)(
     genvar index;
     generate
     for (index=0; index < OUTPUTS; index=index+1) begin
-        prog_mux16 mux_i (
+        prog_mux #(LOG_INPUTS, INPUTS) mux_i (
             .in(in),
             .prog_in(prog_connect[index]),
             .prog_clk(prog_clk),

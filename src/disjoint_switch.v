@@ -43,28 +43,28 @@ module disjoint_switch #(parameter WIDTH = 3)(
         wire [3:0] top    = { l[index], b[index], r[index], 1'dz };
         wire [3:0] right  = { t[index], l[index], b[index], 1'dz };
         wire [3:0] bottom = { r[index], t[index], l[index], 1'dz };
-        prog_mux #(2) mux_left (
+        prog_mux #(2, 4) mux_left (
             .in(left),
             .prog_in(prog_connect[index]),
             .prog_clk(prog_clk),
             .prog_en(prog_en),
             .out(l[index]),
             .prog_out(prog_connect[index + 1]));
-        prog_mux #(2) mux_top (
+        prog_mux #(2, 4) mux_top (
             .in(top),
             .prog_in(prog_connect[index + WIDTH * 1]),
             .prog_clk(prog_clk),
             .prog_en(prog_en),
             .out(t[index]),
             .prog_out(prog_connect[index + WIDTH * 1 + 1]));
-        prog_mux #(2) mux_right (
+        prog_mux #(2, 4) mux_right (
             .in(right),
             .prog_in(prog_connect[index + WIDTH * 2]),
             .prog_clk(prog_clk),
             .prog_en(prog_en),
             .out(r[index]),
             .prog_out(prog_connect[index + WIDTH * 2 + 1]));
-        prog_mux #(2) mux_bottom (
+        prog_mux #(2, 4) mux_bottom (
             .in(bottom),
             .prog_in(prog_connect[index + WIDTH * 3]),
             .prog_clk(prog_clk),

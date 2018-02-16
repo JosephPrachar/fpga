@@ -9,37 +9,22 @@ module io_bank #(parameter SIZE = 5) (
     output prog_out
     );
     
-    wire [SIZE-2:0]prog_connect;
+    wire [SIZE:0]prog_connect;
     
-    io_block first(
-        .fpga(fpga[0]),
-        .io_pad(io_pad[0]),
-        .prog_in(prog_in),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .prog_out(prog_connect[0])
-    );
-    
+    assign prog_connect[0] = prog_in;
+    assign prog_out = prog_connect[SIZE];
+
     genvar index;
     generate
-    for (index=1; index < SIZE - 1; index=index+1) begin
+    for (index=0; index < SIZE; index=index+1) begin
         io_block io_block_i (
             .fpga(fpga[index]),
             .io_pad(io_pad[index]),
-            .prog_in(prog_connect[index - 1]),
+            .prog_in(prog_connect[index]),
             .prog_clk(prog_clk),
             .prog_en(prog_en),
-            .prog_out(prog_connect[index]));
+            .prog_out(prog_connect[index + 1]));
     end
     endgenerate
-    
-    io_block last(
-        .fpga(fpga[SIZE - 1]),
-        .io_pad(io_pad[SIZE - 1]),
-        .prog_in(prog_connect[SIZE - 2]),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .prog_out(prog_out)
-    );
 
 endmodule

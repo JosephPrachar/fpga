@@ -11,8 +11,11 @@ module logic_cluster #(parameter NUM_BLE = 5, parameter NUM_INPUTS = 11)( // the
     );
     
     wire [NUM_BLE * 4 - 1:0] ble_inputs;
+    
     wire [NUM_BLE - 1:0] ble_outputs;
-    wire [NUM_BLE - 1:0] prog_connect;
+    wire [NUM_BLE:0] prog_connect;
+    assign prog_connect[0] = prog_in;
+    assign prog_out = prog_connect[NUM_BLE];
     
     assign out = ble_outputs;
     
@@ -24,18 +27,9 @@ module logic_cluster #(parameter NUM_BLE = 5, parameter NUM_INPUTS = 11)( // the
         .prog_out(prog_connect[0]),
         .out(ble_inputs));  
     
-    logic_element ble_first(
-        .prog_in(prog_connect[0]),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .clk(clk),
-        .in(ble_inputs[3:0]),
-        .prog_out(prog_connect[1]),
-        .out(ble_outputs[0]));
-        
     genvar index;
     generate
-    for (index=1; index < NUM_BLE - 1; index=index+1) begin
+    for (index=0; index < NUM_BLE; index=index+1) begin
         logic_element ble_i(
         .prog_in(prog_connect[index]),
         .prog_clk(prog_clk),
@@ -46,14 +40,5 @@ module logic_cluster #(parameter NUM_BLE = 5, parameter NUM_INPUTS = 11)( // the
         .out(ble_outputs[index]));
     end
     endgenerate
-    
-    logic_element ble_last(
-        .prog_in(prog_connect[NUM_BLE - 1]),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .clk(clk),
-        .in(ble_inputs[3:0]),
-        .prog_out(prog_out),
-        .out(ble_outputs[NUM_BLE - 1]));
 
 endmodule

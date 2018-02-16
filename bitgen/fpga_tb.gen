@@ -1,0 +1,6 @@
+
+createmodule fpga
+
+printnames
+
+printbitstream
