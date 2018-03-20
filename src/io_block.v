@@ -13,25 +13,16 @@ module io_block(
     `define INPUT 1
     `define PULL_DOWN 1
     `define PULL_UP 2
-    `define LAST 2
     
-    reg [`LAST:0] prog_control;
-    reg [`LAST:0] control;
-
-    // TODO put this shift register pattern into a module
-    // Create shift register out of control
-    always @(posedge prog_clk) begin
-        if (prog_en == 1)
-            prog_control <= { prog_control[`LAST:0], prog_in };
-    end
+    wire [2:0] control;
     
-    always @(negedge prog_en) begin
-        control <= prog_control;
-    end
-    
-    // Keep chain of shift registers going to next CLB
-    assign prog_out = prog_control[`LAST];
+    shift_reg #(3) control_bits (
+        .prog_in(prog_in),
+        .prog_en(prog_en),
+        .prog_clk(prog_clk),
+        .prog_out(prog_out),
+        .control(control));
     
     assign fpga   = (control[`DIR] == `INPUT) ? io_pad : 'dz;
-    assign io_pad = (control[`DIR] == `INPUT) ? 'dz    : fpga;
+    assign io_pad = (control[`DIR] == `INPUT && control[`PULL_DOWN] == control[`PULL_UP]) ? 'dz    : fpga;
 endmodule

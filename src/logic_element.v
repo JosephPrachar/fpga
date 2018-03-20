@@ -17,25 +17,14 @@ module logic_element(
     reg flip_flop = 0;
     wire flip_flop_en;
     
-    reg [18:0] prog_control;
-    reg [18:0] control;
-    // control[0:15] for 4-LUT
-    // control[16] controls mux for FF-enable pin
-    // control[17] controls mux for LUT-4 input 0 being feedback or in[0]
-    // control[18] controls mux for out being from LUT-4 or FF
+    wire [18:0] control;
     
-    // Create shift register out of control
-    always @(posedge prog_clk) begin
-        if (prog_en == 1)
-            prog_control <= { prog_control[17:0], prog_in };
-    end
-    
-    always @(negedge prog_en) begin
-        control <= prog_control;
-    end
-    
-    // Keep chain of shift registers going to next CLB
-    assign prog_out = prog_control[18];
+    shift_reg #(19) control_bits (
+        .prog_in(prog_in),
+        .prog_en(prog_en),
+        .prog_clk(prog_clk),
+        .prog_out(prog_out),
+        .control(control));
     
         // set mux for FF-enable
     assign flip_flop_en = (control[16] == 0) ? 1 : in[3];
