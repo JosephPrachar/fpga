@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module disjoint_switch #(parameter WIDTH = 3)(
+module disjoint_switch #(parameter WIDTH = 1)(
     input prog_in,
     input prog_clk,
     input prog_en,
