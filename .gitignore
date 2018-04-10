@@ -1,2 +1,8 @@
 *.class
+*.jou
+*.log
+*.aux
+*.lof
+*.toc
+*.pdf
 *.swp
