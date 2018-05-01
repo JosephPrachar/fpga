@@ -1,0 +1,143 @@
+<!--
+    Example of a classical FPGA soft logic block with
+    N = 10, K = 4, I = 22, O = 10
+    BLEs consisting of a single LUT followed by a flip-flop that can be bypassed
+-->
+<architecture>
+
+    <models>
+    </models>
+
+    <layout>
+        <auto_layout aspect_ratio="1.0">
+            <!--Perimeter of 'io' blocks with 'EMPTY' blocks at corners-->
+            <perimeter type="io" priority="100"/>
+            <corners type="EMPTY" priority="101"/>
+            <!--Fill with 'clb'-->
+            <fill type="clb" priority="10"/>
+        </auto_layout>
+    </layout>
+    <device>
+
+        <sizing R_minW_nmos="8926" R_minW_pmos="16067"/>
+        <!-- The grid_logic_tile_area below will be used for all blocks that do not explicitly set their own (non-routing)
+        area; set to 0 since we explicitly set the area of all blocks currently in this architecture file.
+        -->
+        <area grid_logic_tile_area="0"/>
+        <chan_width_distr>
+            <x distr="uniform" peak="1.000000"/>
+            <y distr="uniform" peak="1.000000"/>
+        </chan_width_distr>
+        <switch_block type="subset" fs="3"/>
+        <connection_block input_switch_name="wire_conn"/>
+    </device>
+    <switchlist>
+        <switch type="tristate" name="wire_conn" R="94.841003" Cin="1.537000e-14" Cout="2.194000e-13" Tdel="6.562000e-11"/>
+    </switchlist>
+    <segmentlist>
+        <segment name="short_seg" freq="1.000000" length="1" type="bidir" Rmetal="11.064550" Cmetal="4.727860e-14">
+          <wire_switch name="wire_conn"/>
+          <opin_switch name="wire_conn"/>
+          <sb type="pattern">1 1</sb>
+          <cb type="pattern">1</cb>
+        </segment>
+    </segmentlist>
+    <complexblocklist>
+        <pb_type name="io" capacity="8" area="0">
+          <input name="outpad" num_pins="1"/>
+          <output name="inpad" num_pins="1"/>
+
+          <mode name="inpad">
+            <pb_type name="inpad" blif_model=".input" num_pb="1">
+              <output name="inpad" num_pins="1"/>
+            </pb_type>
+            <interconnect>
+                <direct name="inpad" input="inpad.inpad" output="io.inpad"/>
+            </interconnect>
+
+          </mode>
+          <mode name="outpad">
+            <pb_type name="outpad" blif_model=".output" num_pb="1">
+              <input name="outpad" num_pins="1"/>
+            </pb_type>
+            <interconnect>
+                <direct name="outpad" input="io.outpad" output="outpad.outpad"/>
+            </interconnect>
+          </mode>
+
+          <!-- Every input pin is driven by 15% of the tracks in a channel, every output pin is driven by 10% of the tracks in a channel -->
+          <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
+
+          <!-- IOs go on the periphery of the FPGA, for consistency, 
+              make it physically equivalent on all sides so that only one definition of I/Os is needed.
+              If I do not make a physically equivalent definition, then I need to define 4 different I/Os, one for each side of the FPGA
+            -->
+          <pinlocations pattern="custom">
+            <loc side="left">io.outpad io.inpad</loc>
+            <loc side="top">io.outpad io.inpad</loc>
+            <loc side="right">io.outpad io.inpad</loc>
+            <loc side="bottom">io.outpad io.inpad</loc>
+          </pinlocations>
+
+          <!-- Place I/Os on the sides of the FPGA -->
+          <power method="ignore"/>			
+        </pb_type>
+        <pb_type name="clb">
+            <input name="I" num_pins="22" equivalent="true"/>
+            <output name="O" num_pins="10" equivalent="true"/>
+            <clock name="clk" num_pins="1" equivalent="false"/>
+
+            <pb_type name="ble" num_pb="10">
+                <input name="in" num_pins="4"/>
+                <output name="out" num_pins="1"/>
+                <clock name="clk" num_pins="1"/>
+
+                <pb_type name="lut_4" blif_model=".names" num_pb="1" class="lut">
+                    <input name="in" num_pins="4" port_class="lut_in"/>
+                    <output name="out" num_pins="1" port_class="lut_out"/>
+                    <delay_matrix type="max" in_port="lut_4.in" out_port="lut_4.out">
+                        261e-12 261e-12 261e-12 261e-12
+                    </delay_matrix>
+                </pb_type>
+                <!--<pb_type name="ff" blif_model=".latch" num_pb="1" class="flipflop">
+                    <input name="D" num_pins="1" port_class="D"/>
+                    <output name="Q" num_pins="1" port_class="Q"/>
+                    <clock name="clk" num_pins="1" port_class="clock"/>
+                    <T_clock_to_Q max="0" min="0" port="ff.Q" clock="clk"/>
+                    <T_setup value="0" port="ff.D" clock="clk"/>
+                    <T_hold value="0" port="ff.D" clock="clk"/>
+                </pb_type>-->
+                <pb_type name="ff" blif_model=".latch" num_pb="1" class="flipflop">
+                  <input name="D" num_pins="1" port_class="D"/>
+                  <output name="Q" num_pins="1" port_class="Q"/>
+                  <clock name="clk" num_pins="1" port_class="clock"/>
+                  <T_setup value="66e-12" port="ff.D" clock="clk"/>
+                  <T_clock_to_Q max="124e-12" port="ff.Q" clock="clk"/>
+                </pb_type>
+
+                <interconnect>
+                    <direct name="data_conn" input="lut_4.out" output="ff.D"/>
+                    <direct name="in_conn" input="ble.in" output="lut_4.in"/>
+                    <mux name="sel_mux" input="ff.Q lut_4.out" output="ble.out">
+                        <delay_constant max="25e-12" in_port="lut_4.out" out_port="ble.out"/>
+                        <delay_constant max="45e-12" in_port="ff.Q" out_port="ble.out"/>
+                    </mux>
+                    <!-- .sdn -->
+                    <direct name="ff_clk" input="ble.clk" output="ff.clk"/>
+                </interconnect>
+            </pb_type>
+
+            <interconnect>
+                <complete name="input_conn" input="{clb.I ble[9:0].out}" output="ble[9:0].in"/>
+                <complete name="output_conn" input="clb.clk" output="ble[9:0].clk"/>
+                <direct name="out_conn" input="ble[9:0].out" output="clb.O"/>
+            </interconnect>
+
+            <!-- Describe complex block relation with FPGA -->
+            <fc default_in_type="frac" default_in_val="0.15" default_out_type="frac" default_out_val="0.10"/>
+
+            <pinlocations pattern="spread"/>
+        </pb_type>
+    </complexblocklist>
+</architecture>
+
