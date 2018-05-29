@@ -1,0 +1,10 @@
+*.blif
+*.net
+*.place
+*.route
+temp/
+*.log
+*.iml
+*.dot
+.idea/
+*.rpt
