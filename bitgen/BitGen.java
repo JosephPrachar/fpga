@@ -5,8 +5,8 @@ public class BitGen {
     public static void main(String[] args) throws FileNotFoundException {
 
 
-        BlifFile parsed = BlifFile.parseBlifFile("/home/joseph/projects/vtr-verilog-to-routing/vtr_flow/temp/adder.pre-vpr.blif");
-
+        //BlifFile parsed = BlifFile.parseBlifFile("/home/joseph/projects/vtr-verilog-to-routing/vtr_flow/temp/adder.pre-vpr.blif");
+        PlaceFile place = PlaceFile.parsePlaceFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.place");
 
 
 
