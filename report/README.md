@@ -16,10 +16,13 @@ sudo apt-get install texlive-latex-extra
 
 ### Compile
 
-Run this command twice (in order to produce the table of contents)
+Run these commands in this order to produce the table of contents and the bibliographic section.
 
 ```bash
 pdflatex fpga_report.tex
+bibtex fpga_report.bib
+pdflatex fpga_report.tex
+pdflatex fpga_report.tex
 ```
 
-This will produce the report file `fpga_report.pdf`.
+This will produce the report file `fpga_report.pdf`
