@@ -1,3 +1,5 @@
+import sun.nio.ch.Net;
+
 import java.io.*;
 import java.util.Scanner;
 
@@ -5,8 +7,9 @@ public class BitGen {
     public static void main(String[] args) throws FileNotFoundException {
 
 
-        //BlifFile parsed = BlifFile.parseBlifFile("/home/joseph/projects/vtr-verilog-to-routing/vtr_flow/temp/adder.pre-vpr.blif");
+        BlifFile parsed = BlifFile.parseBlifFile("/home/jprachar/fpga/vtr/temp/adder_4bit.pre-vpr.blif");
         PlaceFile place = PlaceFile.parsePlaceFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.place");
+        FPGA fpga = NetFile.parseNetFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.net", parsed, place);
 
 
 

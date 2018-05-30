@@ -48,6 +48,16 @@ public class BlifNode {
         return new BlifNode(inputNets, outputNet, lut4Settings);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+        else if (o instanceof BlifNode) {
+            return this.outputNet.equals(((BlifNode)o).outputNet);
+        }
+        return false;
+    }
+
     public String[] getInputNets() {
         return inputNets;
     }

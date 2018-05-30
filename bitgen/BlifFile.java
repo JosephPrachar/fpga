@@ -6,9 +6,9 @@ public class BlifFile {
     private String model;
     private String[] inputs;
     private String[] outputs;
-    private BlifNode[] nodes;
+    private List<BlifNode> nodes;
 
-    public BlifFile(String model, String[] inputs, String[] outputs, BlifNode[] nodes) {
+    public BlifFile(String model, String[] inputs, String[] outputs, List<BlifNode> nodes) {
         this.model = model;
         this.inputs = inputs;
         this.outputs = outputs;
@@ -103,7 +103,7 @@ public class BlifFile {
                 return null;
             } else {
                 return new BlifFile(model, inputs.toArray(new String[inputs.size()]),
-                        outputs.toArray(new String[outputs.size()]), nodes.toArray(new BlifNode[nodes.size()]));
+                        outputs.toArray(new String[outputs.size()]), nodes);
             }
 
         } catch (FileNotFoundException ex) {
@@ -127,7 +127,7 @@ public class BlifFile {
         return outputs;
     }
 
-    public BlifNode[] getNodes() {
+    public List<BlifNode> getNodes() {
         return nodes;
     }
 }
