@@ -12,8 +12,8 @@
         <fixed_layout name="grid_layout" width="4" height="4">
             <single type="io" priority="20" x="1" y="3"/>
             <single type="io" priority="20" x="1" y="0"/>
-            <single type="io2" priority="20" x="0" y="1"/>
-            <single type="io2" priority="20" x="3" y="1"/>
+            <single type="iol" priority="20" x="0" y="1"/>
+            <single type="ior" priority="20" x="3" y="1"/>
             <single type="clb_l" priority="20" x="1" y="1"/>
             <single type="clb_l" priority="20" x="1" y="2"/>
             <single type="clb_r" priority="20" x="2" y="1"/>
@@ -74,7 +74,7 @@
         </segment>
     </segmentlist>
     <complexblocklist>
-        <pb_type name="io2" capacity="5" area="0" height="2">
+        <pb_type name="iol" capacity="5" area="0" height="2">
           <input name="outpad" num_pins="1"/>
           <output name="inpad" num_pins="1"/>
 
@@ -83,7 +83,7 @@
               <output name="inpad" num_pins="1"/>
             </pb_type>
             <interconnect>
-                <direct name="inpad" input="inpad.inpad" output="io2.inpad"/>
+                <direct name="inpad" input="inpad.inpad" output="iol.inpad"/>
             </interconnect>
 
           </mode>
@@ -92,20 +92,58 @@
               <input name="outpad" num_pins="1"/>
             </pb_type>
             <interconnect>
-                <direct name="outpad" input="io2.outpad" output="outpad.outpad"/>
+                <direct name="outpad" input="iol.outpad" output="outpad.outpad"/>
             </interconnect>
           </mode>
 
           <!-- Every input pin is driven by 15% of the tracks in a channel, every output pin is driven by 10% of the tracks in a channel -->
-          <fc in_type="frac" in_val="0.15" out_type="frac" out_val="0.10"/>
+          <fc in_type="frac" in_val="1" out_type="frac" out_val="1"/>
+
+          <!-- IOs go on the periphery of the FPGA, for consistency, 
+              make it physically equivalent on all sides so that only one definition of I/Os is needed.
+              If I do not make a physically equivalent definition, then I need to define 4 different I/Os, one for each side of the FPGA
+            -->
+            <!-- bug here lol -->
+          <pinlocations pattern="custom">
+            <loc side="right">iol.inpad</loc>
+            <loc side="right" yoffset="1">iol.outpad</loc>
+          </pinlocations>
+
+          <!-- Place I/Os on the sides of the FPGA -->
+          <power method="ignore"/>
+        </pb_type>
+        <pb_type name="ior" capacity="5" area="0" height="2">
+          <input name="outpad" num_pins="1"/>
+          <output name="inpad" num_pins="1"/>
+
+          <mode name="inpad">
+            <pb_type name="inpad" blif_model=".input" num_pb="1">
+              <output name="inpad" num_pins="1"/>
+            </pb_type>
+            <interconnect>
+                <direct name="inpad" input="inpad.inpad" output="ior.inpad"/>
+            </interconnect>
+
+          </mode>
+          <mode name="outpad">
+            <pb_type name="outpad" blif_model=".output" num_pb="1">
+              <input name="outpad" num_pins="1"/>
+            </pb_type>
+            <interconnect>
+                <direct name="outpad" input="ior.outpad" output="outpad.outpad"/>
+            </interconnect>
+          </mode>
+
+          <!-- Every input pin is driven by 15% of the tracks in a channel, every output pin is driven by 10% of the tracks in a channel -->
+          <fc in_type="frac" in_val="1" out_type="frac" out_val="1"/>
 
           <!-- IOs go on the periphery of the FPGA, for consistency, 
               make it physically equivalent on all sides so that only one definition of I/Os is needed.
               If I do not make a physically equivalent definition, then I need to define 4 different I/Os, one for each side of the FPGA
             -->
           <pinlocations pattern="custom">
-            <loc side="left">io2.outpad io2.inpad</loc>
-            <loc side="right">io2.outpad io2.inpad</loc>
+            <loc side="left">ior.inpad</loc>
+            <loc side="left" yoffset="1">ior.outpad</loc>
           </pinlocations>
 
           <!-- Place I/Os on the sides of the FPGA -->
