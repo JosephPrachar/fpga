@@ -187,7 +187,7 @@
           <power method="ignore"/>
         </pb_type>
         <pb_type name="clb_l">
-            <input name="I" num_pins="11" equivalent="true"/>
+            <input name="I" num_pins="10" equivalent="true"/>
             <output name="O" num_pins="5" equivalent="true"/>
             <clock name="clk" num_pins="1" equivalent="false"/>
 
@@ -239,7 +239,7 @@
             </pinlocations>
         </pb_type>
         <pb_type name="clb_r">
-            <input name="I" num_pins="11" equivalent="true"/>
+            <input name="I" num_pins="10" equivalent="true"/>
             <output name="O" num_pins="5" equivalent="true"/>
             <clock name="clk" num_pins="1" equivalent="false"/>
 

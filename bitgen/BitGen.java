@@ -7,9 +7,10 @@ public class BitGen {
     public static void main(String[] args) throws FileNotFoundException {
 
 
-        BlifFile parsed = BlifFile.parseBlifFile("/home/jprachar/fpga/vtr/temp/adder_4bit.pre-vpr.blif");
+        BlifFile blif = BlifFile.parseBlifFile("/home/jprachar/fpga/vtr/temp/adder_4bit.pre-vpr.blif");
         PlaceFile place = PlaceFile.parsePlaceFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.place");
-        FPGA fpga = NetFile.parseNetFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.net", parsed, place);
+        RouteFile route = RouteFile.parseRouteFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.route");
+        FPGA fpga = NetFile.parseNetFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.net", blif, place, route);
 
 
 

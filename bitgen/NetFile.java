@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class NetFile {
 
-    public static FPGA parseNetFile(String filename, BlifFile blif, PlaceFile place) {
+    public static FPGA parseNetFile(String filename, BlifFile blif, PlaceFile place, RouteFile route) {
         File file = new File(filename);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = null;
@@ -67,6 +67,7 @@ public class NetFile {
                                 ble_in_settings[a] = ble_inputs[a].equals("open") ? -1 :
                                         Integer.parseInt(ble_inputs[a].substring(ble_inputs[a].indexOf("[") + 1,
                                                                                  ble_inputs[a].indexOf("]")));
+                                ble_in_settings[a] = route.remapPins(place_blk.settings.name, ble_in_settings[a]);
                                 // handle routeback paths mux setting
                                 ble_in_settings[a] += ble_inputs[a].contains("ble") ? 10 : 0;
                                 rot_map_int[a] = rot_map[a].equals("open") ? -1 : Integer.parseInt(rot_map[a]);

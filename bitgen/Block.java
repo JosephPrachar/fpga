@@ -35,6 +35,27 @@ public class Block {
         return name;
     }
 
+    public static String posToName(int x, int y, int subblk) {
+        if (x == 1 && y == 3) {
+            return "ioblock" + ((Integer)subblk).toString();
+        } else if ((x == 3 && y == 1) || (x == 3 && y == 2)) {
+            return "ioblock" + ((Integer)(subblk + 5)).toString();
+        } else if (x == 1 && y == 0) {
+            return "ioblock" + ((Integer)(subblk + 10)).toString();
+        } else if ((x == 0 && y == 1) || (x == 0 && y == 2)) {
+            return "ioblock" + ((Integer)(subblk + 15)).toString();
+        } else if (x == 1 && y == 1) {
+            return "sw_logic";
+        } else if (x == 2 && y == 1) {
+            return "se_logic";
+        } else if (x == 1 && y == 2) {
+            return "nw_logic";
+        } else if (x == 2 && y == 2) {
+            return "ne_logic";
+        }
+        return null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
