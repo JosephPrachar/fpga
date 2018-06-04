@@ -6,6 +6,8 @@
 \usepackage{color}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
 \graphicspath{ ./ }
 \renewcommand{\baselinestretch}{1.5}
 
@@ -117,39 +119,60 @@ due to the vastly intricate circuit that needs to be created and the complex sof
 required to route designs within it.
 
 This project will focus on pulling together the many basic overviews provided by 
-the research sources listed in Appendix 1 \cite{masud_1999}. The main technical overview that will 
+the research sources listed in the bibliography <cite unused articles here>. The main technical overview that will 
 be used to guide the development of this new architecture is Muhammad Imran Masud’s
 master's thesis (FPGA Routing Structures: A Novel Switch Block and Depopulated 
-Interconnect Matrix Architectures). Masud provides a wealth of general overview details 
+Interconnect Matrix Architectures) \cite{masud_1999}. Masud provides a wealth of general overview details 
 of both switch block and interconnect matrix designs before presenting his own variations 
 on them. As the target of this project is just to develop a basic working FPGA design,
 the focus will be on using the general overview of these complicated blocks rather 
-than Masud’s depopulated version to increase simplicity of the design.
+than Masud’s experimental versions to increase simplicity of the design.
 
 While this project will not create any ripples in the electrical and computer engineering 
 field, it will be an extremely useful exercise in digital circuit design, verification,
-and tool production. Developing the new architecture is only a slice of the overall 
+and tool production. Designing the new architecture is only a slice of the overall 
 time requirement of this project. A large amount of time must also be spent verifying 
 this design, which will provide much practice with simulation/verification software 
 due to the complicated nature of this circuit. The individual blocks of this circuit 
 should be straightforward to test, but when performing system level testing, a design 
 must first be created and loaded into the fpga which presents an interesting challenge.
 This challenge leads into the last part of this project, tool development. As this 
-is a completely new FPGA architecture, completely new place and route tools must 
-be created in order to implement designs and actually use this project. These three 
-components come together to provide a large breadth of experience gained across the 
-entire computing field, upon completion of this project.
+is a completely new FPGA architecture, completely new place, route, and bitstream generation tools must 
+be created in order to implement designs and actually use this project. Fortunately,
+early on in the development of this project, the open source Verilog-to-Routing \cite{vtr} CAD flow
+tool was discovered. This mean that the exceptionally complicated place and route component
+of this project did not need to be created from scratch. Together, the three separate
+components of this project (design, test, and software tools) come together to provide an
+excersise encompassing a large breadth of the computing field.
 
 \subsection{Basic Logic Element}
 
 The most fundamental of all parts of an FPGA architecture is the basic logic element 
 (BLE). The BLE is the component which actually does the computation in the circuit.
 BLE’s are made up of a combination of look-up tables and flip flops. Given enough 
-of these BLE’s, any digital circuit can be represented with them, which provides the 
+of these BLE’s, any digital circuit can be created; this provides the 
 basic foundation for the FPGA’s circuit emulation capabilities.
 
+\begin{figure}[ht]
+\centering
+\begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{simple_ble}
+    \caption{Simple BLE design \cite{simple_ble}}
+    \label{fig:simple_ble}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.95\textwidth]{complex_ble}
+  \caption{Xilinx XC4000 BLE design \cite{xilinx_xc4000}}
+  \label{fig:complex_ble}
+\end{subfigure}
+\caption{Comparison of BLE design}
+\label{fig:compare_ble}
+\end{figure}
+
 There are many variable factors that determine the form and function of a BLE in 
-any given architecture: Number of inputs to the block, number of LUT’s, size of each 
+any given architecture (as can be seen in Figure \ref{fig:compare_ble}): Number of inputs to the block, number of LUT’s, size of each 
 LUT, and number of flip-flops to name a few. As a general rule, the more complicated 
 the BLE, the less signals need to be routed by the global interconnect. This makes 
 logical sense seeing as when a circuit is broken into more sub-circuits (as needed 
@@ -163,26 +186,36 @@ of its logic resources, since there may be a significant unused portion of each 
 in each complicated BLE. Ultimately, the most efficient BLE design is dependant on 
 the use case for the final hardware, with general purpose FPGA’s often using a combination 
 of 2 4-LUT’s paired with a smaller 3-LUT and 2 flip flops, as in the Xilinx XC4000EX 
-architecture. This allows the routing software to use this BLE as 2 separate 4-LUT 
+architecture (Figure \ref{fig:complex_ble}) \cite{xilinx_xc4000}. This allows the
+routing software to use this BLE as 2 separate 4-LUT 
 BLE’s or one larger 5-LUT BLE, thereby partially circumventing the inefficiency problem. 
 
-\subsection{Interconnect Matrix}
-The Interconnect Matrix (IM) is a unidirectional switching block allowing signals 
-to enter into the general fabric bus of the FPGA. A simple (fully-connected) IM design 
+\subsection{Connection Box}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.5\textwidth]{conn_box}
+  \caption{3 input 3 output connection box}
+  \label{fig:conn_box}
+\end{figure}
+
+The Connection Box (CB) is a unidirectional switching block allowing signals 
+to enter and exit the general fabric bus of the FPGA. A simple (fully-connected) CB design 
 would consist of each output pin from the module being connected to a mux which could 
-select from any of the inputs. Another of way to implement this module would be to 
+select from any of the inputs (or none of them). Another of way to implement this module would be to 
 have two buses of wires running perpendicular to each other on different layers of 
 silicon. These two buses would be connected at each ‘crossing’ with a transistor 
-which can short the circuit between the two different bus domains. Both of these 
-simple IM designs allow any of the input pins to be directed to any number of the 
-output pins.
+which can short the circuit between the two different bus domains as can be seen in
+Figure \ref{fig:conn_box}. Both of these simple Connection Box designs allow any of
+the input pins to be directed to any number of the output pins.
 
 
 \subsection{Logic Cluster}
 A strategy to put less stress on the fabric of the FPGA while also retaining a simple 
 BLE design is to use the concept of a Logic Cluster to introduce a separation in 
 global routing resources and local routing resources. A Logic Cluster is simply a 
-group of BLE’s combined with a Interconnect matrix so that a more complex operation 
+group of BLE’s combined with a connection box (now referred to as an interconnect matrix)
+so that a more complex operation 
 can be performed without being routed through the general interconnect. Usually, 
 there are 4 to 16 BLE’s per Logic Cluster which all have their outputs connected 
 as inputs into the main interconnect matrix as well as out of the module (into the 
@@ -199,8 +232,16 @@ switch that acts as the interchange for the intersection of 4 buses of the FPGA 
 There are also unidirectional switch blocks, although these designs require larger 
 bus widths to achieve the same route-ability in exchange for the simpler switch design.
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.6\textwidth]{switch_blocks}
+  \caption{Comparison of connection patterns of modern switch blocks \cite{switch_blocks}}
+  \label{fig:switch_blocks}
+\end{figure}
+
 There are many different strategies to determine which bus wires are able to be connected 
-to each other. The simplest of these is the disjoint connection pattern. As the name 
+to each other as seen in Figure \ref{fig:switch_blocks}. The simplest of these is the disjoint
+connection pattern. As the name 
 suggests, this strategy creates separate routing domains from each wire in each bus 
 and once a signal is in one domain it is not able to be routed through any other 
 domain. For example, if 4 10-bit buses are using a disjoint switch block as an interchange,
@@ -211,6 +252,7 @@ Other strategies (such as the wilson or universal patterns) create several order
 of magnitudes greater number of possible routes to get from point to point and thus 
 require much more complicated routing algorithms.
 
+\newpage
 \section{Design}
 
 \subsection{Overview}
@@ -328,11 +370,13 @@ to a programming bit count of 80 (5 BLEs * 4 Inputs per BLE * 4 programming bits
 per 16-bit mux). It is yet to be seen how this design performs in comparison to a 
 transistor level design.
 
-
+\newpage
 \section{Circuit Validation}
 
+\newpage
 \section{Tools}
 
+\newpage
 \section{Conclusion}
 
 \bibliography{fpga_report}{}
