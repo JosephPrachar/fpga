@@ -78,7 +78,7 @@ Under the guidance of\\
 \normalsize
 \textsc{ California Polytechnic State University, San Luis Obispo }\\
 March 2018\\
-\textcolor{red}{\textbf{VERSION 0.1}}
+\textcolor{red}{\textbf{VERSION 0.4}}
 
 
 \end{center}
@@ -190,7 +190,7 @@ architecture (Figure \ref{fig:complex_ble}) \cite{xilinx_xc4000}. This allows th
 routing software to use this BLE as 2 separate 4-LUT 
 BLE’s or one larger 5-LUT BLE, thereby partially circumventing the inefficiency problem. 
 
-\subsection{Connection Box}
+\subsection{Connection Box}\label{Conn_Box}
 
 \begin{figure}[ht]
   \centering
@@ -210,7 +210,15 @@ Figure \ref{fig:conn_box}. Both of these simple Connection Box designs allow any
 the input pins to be directed to any number of the output pins.
 
 
-\subsection{Logic Cluster}
+\subsection{Logic Cluster} \label{logicCluster}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.7\textwidth]{logicclusterex}
+  \caption{General logic cluster diagram \cite{masud_1999}}
+  \label{fig:logiccluster_ex}
+\end{figure}
+
 A strategy to put less stress on the fabric of the FPGA while also retaining a simple 
 BLE design is to use the concept of a Logic Cluster to introduce a separation in 
 global routing resources and local routing resources. A Logic Cluster is simply a 
@@ -252,88 +260,153 @@ Other strategies (such as the wilson or universal patterns) create several order
 of magnitudes greater number of possible routes to get from point to point and thus 
 require much more complicated routing algorithms.
 
+\subsection{Input/Output Block}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\textwidth]{complex_io}
+    \caption{Xilinx XC4000 IO block \cite{xilinx_xc4000}}
+    \label{fig:complex_io}
+\end{figure}
+
+The IO block is another of the essential components of an FPGA, although its function
+is notably simpler than any of the other blocks previously discussed. The IO block's
+purpose is as simple as it sounds, provide a configurable way for signals to get onto and off of
+the chip. As is a reoccurring theme in FPGA design, this is a fairly simple block to
+grasp yet there are very complex implementations of them on modern commercial FPGA's
+as can be seen with the XC4000's IO block (Figure \ref{fig:complex_io}). This example of
+a fully featured IO block contains both input and output flip-flops, output slew rate
+control, pull down/pull up resistors, and configurable output voltage levels. This
+however, is not necessary as the simplest implementation is simply 2 transmission gates
+and 2 buffers which allow the isolation and selection of the input/output lines from
+the pad.
+
+\subsection{Architecture} \label{Architecture}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.75\textwidth]{generalarch}
+    \caption{General island-style FPGA architecture \cite{fpga_arch_overview}}
+    \label{fig:island_style}
+\end{figure}
+
+When all of these types of previously discussed blocks are put together into a complete
+design, the result looks something like the architecture in Figure \ref{fig:island_style}.
+The logic clusters (which
+feature the computational elements and are labeled CLB for configurable logic block in this
+ diagram) act as the 'islands' while the general interconnect
+resides in the channels in between. At each crossing of vertical and horizontal fabric
+buses a switch block is placed to allow the connection of different bus wires. This is
+the most popular style of FPGA currently in use today due to its vast amount of routing
+resources and repetitive design elements.
+
+
 \newpage
-\section{Design}
+\section{Design Overview}
 
-\subsection{Overview}
 This new FPGA architecture, at a high level, will consist of three types of blocks:
-IO, Switch, and logic cluster. Each of these blocks will be completely configurable 
+IO, switch, and logic cluster. Each of these blocks will be completely configurable 'in circuit'
 via the use of chained shift registers throughout the entire chip. Once again, due 
-to the potential complexity of this circuit and the desire to complete this project 
-in half of an academic quarter, only a basic working design is being targeted. This 
-means that no one circuit design metric will be targeted to be improved on other 
-existing designs. The rough scope/goals for the final circuit will be the ability 
-to implement simple finite state machines with less than 10 inputs, less than 10 
-outputs, and less than 10 states. The architecture should also be able to be programmed 
-‘in circuit’ with any valid design.
-
+to the potential complexity of this circuit and the desire to complete this project,
+only a basic working design is being targeted. This means that no one circuit design
+metric will be targeted to be improved on from other existing FPGA architectures.
+The rough scope/goals for the final circuit will be the ability to implement simple
+finite state machine type circuits with less than 10 inputs, less than 10 outputs, and
+less than 10 states. Although with the use of Verilog-to-Routing, any verilog design
+which fits onto the architecture may be implemented.
 
 This project consists of essentially three parts of equal time and value: circuit 
 design, circuit validation, and implementation tools. This document contains many 
 arbitrary design decisions. From research, it is clear what a generalized FPGA design 
 looks like and how it is routed. What has become increasingly difficult is specifying 
-the specific values of the device. Width of interconnect buses, interconnect redundancy,
+the actual values of the device. Width of interconnect buses, interconnect redundancy,
 and routing connectedness to IO blocks are all examples of things that are very 
-much “hand waved” based on all research discovered thus far. The following three 
-sections represent a rough first hashing out of such values. These were constantly 
+much “hand waved” based on all available research. The following three 
+sections represent a rough hashing out of such values. These were constantly 
 re-evaluated throughout the design process to insure that each value provides a meaningful 
 connection towards the final 10-input, 10-output, 10-state FSM implementation goal.
 
-\subsection{Circuit Design}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=.7\textwidth]{fsm}
+  \caption{Basic finite state machine block diagram \cite{fsm}}
+  \label{fig:fsm}
+\end{figure}
+
+The justification for the aim to create a device which can emulate any 10-input, 10-output,
+10-state FSM is the hope that such a specific goal will help to ground the abstract
+nature of FPGA's. With this goal in mind, design decisions 'tiebreakers' can be
+handled more easily because the answer to the difficult question of deciding on important
+variables is always "Which value will give better results to the goal FSM circut?".
+The basic setup of this FSM type design can be seen in Figure \ref{fig:fsm} above.
+
+\newpage
+\section{Circuit Design}
+
+\subsection{Architecture}
+
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=.9\textwidth]{internal_block}
+  \caption{Block diagram for new architecture}
+  \label{fig:internal_block}
+\end{figure}
 
 The design of this architecture attempts to mimic the well established island FPGA 
-architecture, of which a general block diagram can be seen in Figure 2.1. The specific 
-internal block diagram for this project can be seen in Figure 2.3, made up from 20 
-IO blocks, 9 switch blocks, 4 interconnect matrices, and 4 logic clusters (not including 
-programing IOs). This gives a total of 20 basic logic elements (5 BLE’s per logic 
-cluster) for 20 flip flops, and 20 4-LUT’s. This design was then de-scoped to a design 
-which contained 20 IO blocks, 0 switch blocks, 1 interconnect matrix, and 1 logic 
-cluster (including programming IOs). This gives a total of 5 basic logic elements 
-for 5 flip flops, and 5 4-LUT’s.
+architecture from Section \ref{Architecture} although it is too small to really draw parallels between the two.
+The specific internal block diagram for this project can be seen in Figure \ref{fig:internal_block},
+made up from 20 IO blocks, 5 switch blocks, 12 connection boxes, and 4 logic clusters.
+The fabric of the FPGA is 10 wires wide represented
+by the thicker lines connecting the switch blocks and connection boxes.
 
+The general size of this architecture was decided based on the need for an architecture
+which could be routed by hand if enough progress was not made on the place/route/bitstream software
+tool set. This size is definitely limiting when attempting to implement general
+verilog designs but is actually very helpful when working out and planning a configuration
+for a gate-level diagram by hand which was done many times during the development process
+to get a better understanding of how each block works together. In alignment with the overarching
+goal for this circuit to implement the medium sized FSM, this design provides the correct amount
+of IO's and provides more than 5 times the required amount of state storage. This gives much lenience 
+to the HDL programmer to design state storage in less efficient (but more logical) ways and leaves
+plenty of room to implement next state and output conversion logic (Figure \ref{fig:fsm}).
 
-The circuit is programmed with a ‘snake’ of shift registers that runs throughout 
-the circuit. The original design would have required on the order of 1000 bits to 
-program. The revised design requires 235 bits to completely describe.
+The design has 4 Banks of 5 IO blocks. The north and south blocks are biased towards inputs
+as they can be routed to the input pins of a logic cluster by going through only a single switch
+block. The east and west blocks are biased towards outputs as they can be routed to from a logic
+cluster in one or less switch block connections. This decision attempts to remove the necessity 
+of the use of global routing resources by allowing a number of signals
+in well designed circuits to avoid going through the center switch block (where each signal can
+consume a maximum of 10\% of the total global wires).
 
+\subsection{Programming Circuit}
 
-The de-scope of this project was directly due to the complexity of the switch block 
-design and implementation. In addition to creating the hardware of a Switch block,
-the presence of a switch block in the design would have made the circuit much more 
-complex to route. This would have created the necessity for place and route tools,
-in addition to the bitstream generator since it would be impractical to do the 
-place and route by hand in the original design.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.5\textwidth]{toplevel}
-    \caption{Top level block diagram}
-    \label{fig:toplevel}
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=.6\textwidth]{prog_diag}
+  \caption{Block diagram for new architecture with programming order}
+  \label{fig:prog_diag}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.5\textwidth]{generalarch}
-    \caption{General island-style FPGA architecture}
-    \label{fig:generalarch}
-\end{figure}
+As is required to achieve the design goals for this circuit, all of the settings for
+each block are completely configurable through a ‘snake’ of shift registers that runs throughout 
+the circuit (Figure \ref{fig:prog_diag}). The programming order chosen was based on connecting
+spatially close blocks. Originally, this was done with only clock and data
+wires. An additional enable wire was added to both decrease the probability of the circuit
+being changed by noise during use, and to more easily internally detect when the
+in-circuit programming was complete.
+
+\subsection{Basic Logic Element}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.75\textwidth]{arch}
-    \caption{High level block diagram (no programming signals)}
-    \label{fig:arch}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.5\textwidth]{circuit_toplevel}
-    \caption{Logic cluster circuit diagram}
-    \label{fig:circuit_toplevel}
+    \includegraphics[width=\textwidth]{ble}
+    \caption{Basic logic element circuit diagram}
+    \label{fig:ble}
 \end{figure}
 
 The design of the BLE block is very basic. The block design can be seen in Figure 
-2.7 and the verilog code can be found in Figure 2.8. The BLE contains 3 2-bit muxes,
+\ref{fig:ble} and the verilog code can be found in the code listing section of the
+appendix (Figure \ref{code:ble}). The BLE contains 3 2-bit muxes,
 1 16-bit mux, and 2 19 bit shift registers, 16 bits of which are used in the 4-
 LUT. The remaining 3 bits are used to: enable the feedback path from the flip flop 
 to input A of the 4-LUT, enable the use of input D as the enable input to the flip 
@@ -346,40 +419,127 @@ only while the device is being programmed (as told by the prog{\_}enable signal)
 second is only filled when the final control signals are in the programming shift 
 registers (falling edge of prog{\_}enable signal).
 
-\begin{figure}[h]
+\subsection{Connection Box}
+
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{circuit_ble}
-    \caption{Basic logic element circuit diagram}
-    \label{fig:ble}
+    \includegraphics[width=\textwidth]{prog_mux}
+    \caption{Circuit diagram of a programmable multiplexer}
+    \label{fig:prog_mux}
 \end{figure}
 
-\begin{figure}[h]
+The connection box implementation is based on the combination of many less complicated
+logic blocks called programmable multiplexers (prog mux). A prog mux is simply a mux combined with
+a shift register which is in the configuration chain of the FPGA. This enables the logic
+block to be connected to a number of inputs in hardware but have the ultimate selection
+of which wire to drive to the output done at programming time as part of the bitstream. 
+A graphical representation of this block can be seen in Figure \ref{fig:prog_mux}.
+
+Once the prog mux block is created, the design for a connection box is relatively simple
+as described in Section \ref{Conn_Box}. A prog mux is created for each output pin. The
+size (number of select bits) of the prog mux is determined by taking the ceiling of
+the log base 2 of the number of inputs.
+The use of Verilog parameters (as seen in Figure \ref{code:prog_mux} and Figure \ref{code:conn_box})
+makes both the connection box and the prog mux reusable
+throughout the rest of the HDL design.
+
+\subsection{Logic Cluster}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{LogicCluster}
+    \caption{Logic cluster diagram (including output connection box)}
+    \label{fig:logic_cluster}
+\end{figure}
+
+The logic cluster is a combination of a connection box and multiple basic logic elements
+as discussed in Section \ref{logicCluster}. The number of ble's was chosen to be 5. This
+was a value that seemed reasonable in regards to how much total memory and logic resources
+ it produced. It also allowed the use of 16 input prog muxes (instead of 32 input) with a
+10 bit fabric bus. The choice of 6 ble's also would have allowed the use of 16 input prog muxes but
+5 ble's times 4 logic clusters already provided more than enough resources to achieve the
+FSM goal.
+
+The graphic in Figure \ref{fig:logic_cluster} is a good way to represent the entire view
+of a logic cluster. This diagram was printed out and used to walk though the place and route problem in
+complete detail. Lines can be drawn in both connection boxes to show connections to and from ble's while
+gate level diagrams can be drawn in each ble block and then translated into the look up table
+equivalent. This process was done many times during development to ensure understanding of
+how everything fit together.
+
+\subsection{Switch Block}
+
+
+\subsection{Input/Output Block}
+
+The IO block was influenced by the complicated Xilinx model referenced in the 
+appendix but reduced significantly. It consists of two 2-bit multiplexers, an 
+input buffer, an output buffer, pull up/down resistors with pass transistor 
+enables, and the shift registers required to program it. When designing the 
+multiplexer for this circuit, transmission gates were used, rather than a 
+simple pass transistor, to avoid the voltage drop that a pass transistor 
+would create (Figure 2.10). The pull up/down resistors retained their enable 
+implemented as a pass transistor because they are directly connected to the 
+input buffer and simulations showed an acceptable noise margin above/below 
+the undefined logic level. The signals then pass into the input buffer and 
+are corrected for any voltage loss before reaching the inside FPGA circuitry. 
+The pull up/down resistor enables are only valid for input configurations, 
+this is enforced in the BitGen software tool.
+
+\newpage
+\section{Verilog-to-Routing}
+
+\subsection{Introduction}
+
+\subsection{Architecture Description}
+
+\subsection{Examples}
+
+\newpage
+\section{Bitstream Generation}
+
+\subsection{VTR File Parsing}
+
+\subsection{Design}
+
+\newpage
+\section{Circuit Validation}
+
+\subsection{Basic Logic Element}
+
+\subsection{Connection Box}
+
+\subsection{Logic Cluster}
+
+\subsection{Switch Block}
+
+\subsection{Input/Output Block}
+
+\newpage
+\section{Conclusion}
+
+\newpage
+\bibliography{fpga_report}{}
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{plain}
+
+\newpage
+\section{Appendix}
+
+\subsection{Github}
+
+\subsection{Design Code Listing}
+
+\begin{figure}[ht]
     \lstinputlisting[language=Verilog]{../src/logic_element.v}
     \caption{Basic logic element code}
     \label{code:ble}
 \end{figure}
 
-The interconnect matrix was also approached with a very basic implementation in mind. 
-A large design decision was made to describe the interconnect matrix in verilog 
-instead of utilizing a mixed flow transistor level design. This allowed an extremely 
-simple design of having four 16-bit muxes tied to each BLE. In addition to being 
-simple to design, the choice of verilog also made the use of a HDL static analysis 
-tool possible which made verification a much simpler task. Each mux is programed 
-to pass a single signal for the entire programmed operation of the device. This leads 
-to a programming bit count of 80 (5 BLEs * 4 Inputs per BLE * 4 programming bits 
-per 16-bit mux). It is yet to be seen how this design performs in comparison to a 
-transistor level design.
+\subsection{Testbench Code Listing}
 
-\newpage
-\section{Circuit Validation}
 
-\newpage
-\section{Tools}
+\subsection{Bitstream Generator Code Listing}
 
-\newpage
-\section{Conclusion}
-
-\bibliography{fpga_report}{}
-\bibliographystyle{plain}
 
 \end{document}
