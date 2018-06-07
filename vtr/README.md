@@ -54,6 +54,6 @@ used by the bitgen tool to create a bitstream that can be used to actually progr
 the device.
 
 ```bash
-$VTR_HOME/vpr/vpr basic.xml temp/adder_4bit.pre-vpr.blif --disp on --route_chan_width 10
+$VTR_HOME/vpr/vpr basic.xml temp/fsm_using_function.pre-vpr.blif --disp on --timing_analysis off --timing_driven_clustering off --place_algorithm bounding_box --max_router_iterations 2000 --initial_pres_fac 0.1 --bb_factor 10 --router_algorithm breadth_first --alpha_clustering 0 --cluster_seed_type max_inputs --target_ext_pin_util .7
 ```
 
