@@ -1,5 +1,6 @@
 \documentclass[12pt]{article}
 \usepackage[top=1in, bottom=1in, left=1.5in, right=1in]{geometry}
+\usepackage{float}
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{fullpage}
@@ -105,6 +106,8 @@ used for such a routing constrained architecture.
 \newpage
 \listoffigures
 \newpage
+\lstlistoflistings
+\newpage
 
 \section{Introduction}
 
@@ -158,13 +161,13 @@ basic foundation for the FPGA’s circuit emulation capabilities.
 \begin{subfigure}{.5\textwidth}
     \centering
     \includegraphics[width=.95\textwidth]{simple_ble}
-    \caption{Simple BLE design \cite{simple_ble}}
+    \caption{Simple BLE design (Figure from \cite{simple_ble})}
     \label{fig:simple_ble}
 \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
   \centering
   \includegraphics[width=.95\textwidth]{complex_ble}
-  \caption{Xilinx XC4000 BLE design \cite{xilinx_xc4000}}
+  \caption{Xilinx XC4000 BLE design (Figure from \cite{xilinx_xc4000})}
   \label{fig:complex_ble}
 \end{subfigure}
 \caption{Comparison of BLE design}
@@ -215,7 +218,7 @@ the input pins to be directed to any number of the output pins.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=.7\textwidth]{logicclusterex}
-  \caption{General logic cluster diagram \cite{masud_1999}}
+  \caption{General logic cluster diagram (Figure from \cite{masud_1999})}
   \label{fig:logiccluster_ex}
 \end{figure}
 
@@ -243,7 +246,7 @@ bus widths to achieve the same route-ability in exchange for the simpler switch 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=.6\textwidth]{switch_blocks}
-  \caption{Comparison of connection patterns of modern switch blocks \cite{switch_blocks}}
+  \caption{Comparison of connection patterns of modern switch blocks (Figure from \cite{switch_blocks})}
   \label{fig:switch_blocks}
 \end{figure}
 
@@ -265,7 +268,7 @@ require much more complicated routing algorithms.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.75\textwidth]{complex_io}
-    \caption{Xilinx XC4000 IO block \cite{xilinx_xc4000}}
+    \caption{Xilinx XC4000 IO block (Figure from \cite{xilinx_xc4000})}
     \label{fig:complex_io}
 \end{figure}
 
@@ -286,7 +289,7 @@ the pad.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.75\textwidth]{generalarch}
-    \caption{General island-style FPGA architecture \cite{fpga_arch_overview}}
+    \caption{General island-style FPGA architecture (Figure from \cite{fpga_arch_overview})}
     \label{fig:island_style}
 \end{figure}
 
@@ -329,7 +332,7 @@ connection towards the final 10-input, 10-output, 10-state FSM implementation go
 \begin{figure}[ht]
   \centering
   \includegraphics[width=.7\textwidth]{fsm}
-  \caption{Basic finite state machine block diagram \cite{fsm}}
+  \caption{Basic finite state machine block diagram (Figure from \cite{fsm})}
   \label{fig:fsm}
 \end{figure}
 
@@ -469,31 +472,113 @@ how everything fit together.
 
 \subsection{Switch Block}
 
+The switch block design uses the disjoint connection pattern to create the simplest
+possible fabric structure. The block has 4 10 bit wide bus connections which are all
+bidirectional. The internal makeup of the switch block is (like the connection box) just
+made up of many prog muxes driving the output pins of each pin of the bus connections with
+an additional connection for not driving the output (High Z).
+
 
 \subsection{Input/Output Block}
 
-The IO block was influenced by the complicated Xilinx model referenced in the 
-appendix but reduced significantly. It consists of two 2-bit multiplexers, an 
-input buffer, an output buffer, pull up/down resistors with pass transistor 
-enables, and the shift registers required to program it. When designing the 
-multiplexer for this circuit, transmission gates were used, rather than a 
-simple pass transistor, to avoid the voltage drop that a pass transistor 
-would create (Figure 2.10). The pull up/down resistors retained their enable 
-implemented as a pass transistor because they are directly connected to the 
-input buffer and simulations showed an acceptable noise margin above/below 
-the undefined logic level. The signals then pass into the input buffer and 
-are corrected for any voltage loss before reaching the inside FPGA circuitry. 
-The pull up/down resistor enables are only valid for input configurations, 
-this is enforced in the BitGen software tool.
+The IO block was influenced by the complicated Xilinx model referenced in Figure
+\ref{fig:complex_io} but reduced significantly. It consists of the minimum setup 
+(a few tri-state drivers) plus pull up/down resistors with pass transistor 
+enables, and the shift registers required to program it. The pull-up and pull-down
+resistors however, are not applicable when dealing with this Verilog implementation
+and static digital simulation.
 
 \newpage
 \section{Verilog-to-Routing}
 
 \subsection{Introduction}
 
+Verilog-to-Routing (VTR) \cite{vtr} is the premiere open source FPGA CAD flow for FPGA academic research.
+This tool allows any FPGA architecture to be worked on with the use of its architecture
+description language to specify every detail about the architecture.
+The fact that this tool was discovered aided the project tremendously due to how many
+complex algorithms could be left to VTR to handle. VTR is comprised of 3 separate tools:
+Odin, ABC, and VPR. Odin is used to synthesize and elaborate Verilog files into 
+BLIF netlist files which can be
+implemented on the specified architecture. The next tool executed is ABC which optimizes the
+netlist. Versatile Place and Route (VPR) is the final step in the flow which takes the
+netlist produced in the previous step and places the individual groups of logic 
+and routes the nets on the architecture. VPR also provides a graphical representation to view
+how the circuit is implemented on the device.
+
+While the original goal of this project was to create an FPGA from scratch (including
+the software tools) the use of VTR was deemed to be a good decision for two main reasons.
+First, VTR is a sort of academic standard and provides all sorts of additional
+features (not used in this project) to help benchmark and compare FPGA architectures.
+Therefore, this was seen as a good opportunity to learn a new toolset in a hands on manor for
+possible future projects in this area of study. Second, The algorithms that VTR handles
+are REALLY complex (NP-Hard) and also creates the opportunity
+to implement Verilog designs instead of hand produced netlists and logic. Specifically the VPR tool
+provides a way to avoid writing a new place and route algorithm which would have
+been passable with this size of architecture but would have struggled with any increase
+in size (as a good place and route algorithm could be a whole senior project on its own).
+
 \subsection{Architecture Description}
 
-\subsection{Examples}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{vtr_arch}
+    \caption{VTR parse and rendering of new architecture}
+    \label{fig:vtr_arch}
+\end{figure}
+
+In order to integrate with the VTR CAD flow both a Verilog file and an architecture
+description file must be
+provided. The Verilog is easy and marks a huge improvement over hand drawing circuits
+and feeding them into a hand-written tool, but the architecture description language
+is a whole other concept to grasp. This language uses an XML format to specify every
+possible variable within an architecture including: setup-hold times, switch block
+connection strategy, block locations, BLE size, and much more. For this project, all
+timing information was deemed to be out of scope so there are placeholder times, resistances,
+and capacitances where real values should be (VTR did not accept the concept of
+an 'ideal' FPGA and refused to route it). This commented file can be found in the Appendix
+in Listing \ref{code:arch_des}
+and it produces the graphical representation found in Figure \ref{fig:vtr_arch}.
+
+As can be seen in Figure \ref{fig:vtr_arch}, there are slight differences in how VTR
+perceives this architecture vs how it was designed (Figure \ref{fig:internal_block}).
+These differences are mainly present in the fabric and switch block layout and are
+due to the lack of granularity control in specifying the location of the fabric and switch blocks.
+The VTR tool makes the assumption that the architecture being specified is a regular
+island type architecture (which has a very regular fabric structure) and spends much
+more effort in understanding the various complex blocks (IO, logic cluster, BLE, etc).
+This difference is entirely cosmetic as there is still a strict equivilance between
+the channels from the designed to the interpreted architectures which is important for
+generating the bitstream.
+
+Another notable diversion from the design specified is that many of the auxiliary control 
+signals for the BLE implementation are missing from the architecture specification file
+(internal feedback and flip flop enable) due to being able specify them in the architecture file.
+These features are still in the HDL implementation of the device and still accessible via hand
+programming although they will be unknown (and unusable) to the VTR flow.
+
+\subsection{Example}
+
+The main example that will be used in this report is a simple sequence detector circuit
+with an output bus that drives a seven-segment display with the current state. This is
+a classic example of a FSM type of design although it only has 3 inputs (including clock)
+and 7 outputs. The design recognizes the 9-bit long sequence "101100101" which takes
+9 states (one for each bit of the sequence) and one additional state for an initial zero.
+This can be seen in more detail in the code listing for this example (Listing \ref{code:seq_det}).
+Figure \ref{fig:seq_det} showcases this example circuit implemented on the new architecture.
+Some notable observations include how the concept of input and output biased IO banks
+are not taken into account. Also it is surprising to see 100\% BLE utilization
+within the architecture with this design. Usually, routing resources are the main
+obstacle in the implementation onto an FPGA. Anywhere from 85\%-90\% logic utilization
+is usually where commercial place and route algorithms begin to struggle to successfully
+route designs.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{seq_det}
+    \caption{VTR rendering of sequence detector implementation}
+    \label{fig:seq_det}
+\end{figure}
 
 \newpage
 \section{Bitstream Generation}
@@ -503,7 +588,7 @@ this is enforced in the BitGen software tool.
 \subsection{Design}
 
 \newpage
-\section{Circuit Validation}
+\section{Circuit Verification}
 
 \subsection{Basic Logic Element}
 
@@ -528,13 +613,13 @@ this is enforced in the BitGen software tool.
 
 \subsection{Github}
 
+\subsection{Architecture Description File}
+
+\lstinputlisting[language=xml,caption={Architecture description file}, label={code:arch_des}]{../vtr/basic.xml}
+
 \subsection{Design Code Listing}
 
-\begin{figure}[ht]
-    \lstinputlisting[language=Verilog]{../src/logic_element.v}
-    \caption{Basic logic element code}
-    \label{code:ble}
-\end{figure}
+\lstinputlisting[language=Verilog, caption={Basic logic element code}, label={code:ble}]{../src/logic_element.v}
 
 \subsection{Testbench Code Listing}
 
