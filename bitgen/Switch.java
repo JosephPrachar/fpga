@@ -1,14 +1,52 @@
-public class Switch extends Module {
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class Switch extends Module implements Interconnect {
+    List<InterconnectPoint> connections;
+    @Override
+    public boolean createConnection(InterconnectPoint from, InterconnectPoint to) {
+        int i_from, i_to;
+        if ((i_from = connections.indexOf(from)) != -1 &&
+                (i_to = connections.indexOf(to)) != -1) {
+            boolean res = this.SetValue(this.name + "." + Side.toString(i_to) + from.track.toString() + ".sel",
+                    MuxSetting(i_to, i_from));
+            if (!res) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     private static class Side {
         public static final int Left = 0;
         public static final int Top  = 1;
         public static final int Right = 2;
         public static final int Bottom = 3;
         public static final int HighZ = 4;
+        public static String toString(int num) {
+            if (num == Left)
+                return "left";
+            else if (num == Top)
+                return "top";
+            else if (num == Right)
+                return "right";
+            else if (num == Bottom)
+                return "bottom";
+            else return "";
+        }
     }
     int width;
-    public Switch(String name, int width) {
+    public Switch(String name, int width, InterconnectPoint left, InterconnectPoint top,
+                  InterconnectPoint right, InterconnectPoint bottom) {
         super("Switch", name);
+        InterconnectPoint[] temp = new InterconnectPoint[4];
+        temp[Side.Left] = left;
+        temp[Side.Top] = top;
+        temp[Side.Right] = right;
+        temp[Side.Bottom] = bottom;
+        this.connections = Arrays.asList(temp);
         this.width = width;
         this.subModules = new Module[4 * width];
         for (int i = 0; i < width; i++) {
@@ -28,7 +66,7 @@ public class Switch extends Module {
         if (diff == 0) {
             return null;
         }
-        return new byte[] {(byte)(diff & 1),(byte)(diff & 2)};
+        return new byte[] {(byte)(diff & 1),(byte)((diff & 2) >> 1)};
     }
     private int MuxSetting(int muxSide, ControlBits setting) {
         if (setting.values.length != 2) {

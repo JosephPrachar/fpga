@@ -1,18 +1,16 @@
 import java.util.List;
 
 public class Route {
-    public int track;
-    public int pin;
-    public String source;
-    public String sink;
-    public List<Channel> path;
+    public List<InterconnectPoint> path;
+    public InterconnectPoint source;
+    public InterconnectPoint sink;
 
-    public Route(int track, int pin, String source, String sink, List<Channel> path) {
-        this.track = track;
-        this.pin = pin;
-        this.source = source;
-        this.sink = sink;
+    public Route(List<InterconnectPoint> path) {
         this.path = path;
     }
-}
 
+    public void routeComplete() {
+        this.source = path.get(0);
+        this.sink = path.get(path.size() - 1);
+    }
+}

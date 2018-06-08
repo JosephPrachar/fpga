@@ -95,6 +95,24 @@ public class NetFile {
 
         }
 
+        for (int i = 0; i < route.routes.size(); i++) {
+            Route r = route.routes.get(i);
+            for (int a = 0; a < r.path.size() - 1; a++) {
+                boolean routed = false;
+                for (Module mod : fpga.subModules) {
+                    if (mod instanceof Interconnect) {
+                        Interconnect conn = (Interconnect) mod;
+                        if (conn.createConnection(r.path.get(a), r.path.get(a+1))) {
+                            conn.createConnection(r.path.get(a), r.path.get(a+1));
+                            routed = true;
+                            break;
+                        }
+                    }
+                }
+                if (!routed)
+                    return null;
+            }
+        }
 
 
         return fpga;

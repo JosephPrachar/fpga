@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -16,8 +17,8 @@ public class RouteFile {
     public int remapPins(String lc, int pin) {
         for (int i = 0; i < routes.size(); i++) {
             Route cur = routes.get(i);
-            if (cur.sink.equals(lc) && cur.pin == pin) {
-                return cur.track;
+            if (cur.sink.equals(lc) && cur.sink.track == pin) {
+                return cur.path.get(1).track;
             }
         }
         return pin;
@@ -38,21 +39,23 @@ public class RouteFile {
                     int x = Integer.parseInt(curLine.substring(curLine.indexOf("(") + 1, curLine.indexOf(",")));
                     int y = Integer.parseInt(curLine.substring(curLine.indexOf(",") + 1, curLine.indexOf(")")));
                     int subblk = -1;
-                    int pin = -1;
+                    toAdd = new Route(new ArrayList<>());
                     if (x == 0 || x == 3 || y == 0 || y == 3) {
                         subblk = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pad") + 5)) / 2;
+                        toAdd.path.add(new InterconnectPoint(Block.IOBlockToBank(Block.posToName(x, y, subblk)), subblk));
+                    } else {
+                        subblk = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pin") + 5));
+                        toAdd.path.add(new InterconnectPoint(Block.posToName(x, y, subblk), subblk));
                     }
-                    toAdd = new Route(-1, -1, Block.posToName(x, y, subblk), null, new ArrayList<>());
-                } else if (curLine.contains("CHANX")) {
+                } else if (curLine.contains("CHANX") || curLine.contains("CHANY")) {
+                    boolean vertical = curLine.contains("CHANY");
                     int x = Integer.parseInt(curLine.substring(curLine.indexOf("(") + 1, curLine.indexOf(",")));
                     int y = Integer.parseInt(curLine.substring(curLine.indexOf(",") + 1, curLine.indexOf(")")));
-                    toAdd.path.add(new Channel(x, y, false));
-                    toAdd.track = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Track") + 7));
-                } else if (curLine.contains("CHANY")) {
-                    int x = Integer.parseInt(curLine.substring(curLine.indexOf("(") + 1, curLine.indexOf(",")));
-                    int y = Integer.parseInt(curLine.substring(curLine.indexOf(",") + 1, curLine.indexOf(")")));
-                    toAdd.path.add(new Channel(x, y,true));
-                    toAdd.track = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Track") + 7));
+                    if (toAdd == null) {
+                        toAdd = new Route(new ArrayList<>());
+                        //toAdd.path.add(rf.routes.get(rf.routes.size() - 1).source);
+                    }
+                    toAdd.path.add(new Channel(x, y,vertical, Integer.parseInt(""+curLine.charAt(curLine.indexOf("Track") + 7))));
                 } else if (curLine.contains("IPIN")) {
                     int x = Integer.parseInt(curLine.substring(curLine.indexOf("(") + 1, curLine.indexOf(",")));
                     int y = Integer.parseInt(curLine.substring(curLine.indexOf(",") + 1, curLine.indexOf(")")));
@@ -60,11 +63,12 @@ public class RouteFile {
                     int pin = -1;
                     if (x == 0 || x == 3 || y == 0 || y == 3) {
                         subblk = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pad") + 5)) / 2;
+                        toAdd.path.add(new InterconnectPoint(Block.IOBlockToBank(Block.posToName(x, y, subblk)), subblk));
                     } else {
                         pin = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pin") + 5));
+                        toAdd.path.add(new InterconnectPoint(Block.posToName(x, y, 0), pin));
                     }
-                    toAdd.sink = Block.posToName(x, y, subblk);
-                    toAdd.pin = pin;
+                    toAdd.routeComplete();
                     rf.routes.add(toAdd);
                     toAdd = null;
                 }

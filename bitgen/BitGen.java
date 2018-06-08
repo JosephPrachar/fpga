@@ -12,7 +12,7 @@ public class BitGen {
         RouteFile route = RouteFile.parseRouteFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.route");
         FPGA fpga = NetFile.parseNetFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.net", blif, place, route);
 
-
+        PrintDataStream(fpga.GetProgStream());
 
         return;
 
@@ -132,7 +132,7 @@ public class BitGen {
         } else if (args[1].equals("interconnectmatrix") && args.length != 4) {
             int inputs = Integer.parseInt(args[2]);
             int outputs = Integer.parseInt(args[3]);
-            return new ConnectionBox("ic", inputs, outputs);
+            //return new ConnectionBox("ic", inputs, outputs);
         } else if (args[1].equals("ble")) {
             return new LogicElement("ble");
         } else if (args[1].equals("progmux")) {
@@ -141,7 +141,7 @@ public class BitGen {
             return new IOBlock("ioblock");
         } else if (args[1].equals("switch")) {
             int width = Integer.parseInt(args[2]);
-            return new Switch("switch", width);
+            //return new Switch("switch", width);
         }
 
         System.out.println("Usage: createmodule <fpga|logiccluster|interconnectmatrix|ble|progmux|ioblock>");

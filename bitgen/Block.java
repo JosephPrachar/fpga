@@ -56,6 +56,11 @@ public class Block {
         return null;
     }
 
+    public static String IOBlockToBank(String ioblock) {
+        String blk = ioblock.replaceFirst("ioblock", "");
+        Integer bank = Integer.parseInt(blk) / 5;
+        return "iobank" + bank.toString();
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) {
