@@ -1,7 +1,18 @@
-module adder(a, b, out);
-    input [3:0] a;
-    input [3:0] b;
-    output [4:0] out;
+module adder(clk, set, clear, q);
+    input clk;
+    input set;
+    input clear;
+    output q;
 
-    assign out = {1'd0, a} + {1'd0, b};
+    reg bit = 0;
+
+    assign q = bit;
+
+    always @(posedge clk) begin
+        if (set)
+            bit <= 1;
+        else if (clear)
+            bit <= 0;
+    end
+
 endmodule

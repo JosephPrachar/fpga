@@ -87,11 +87,6 @@ public class NetFile {
                     for (int ii = 0; ii < bles.getLength(); ii++) {
                         Element ble = (Element) bles.item(ii);
                         if (!ble.getAttribute("name").equals("open")) {
-                            for (Route r : route.routes) {
-                                if (r.name.equals(ble.getAttribute("name"))) {
-                                    r.source.track = ble_count;
-                                }
-                            }
                             String[] ble_inputs = ((Element)ble.getElementsByTagName("inputs").item(0))
                                     .getElementsByTagName("port").item(0).getTextContent().split(" ");
                             String[] rot_map = ble.getElementsByTagName("port_rotation_map").item(0).getTextContent().split(" ");
@@ -108,7 +103,7 @@ public class NetFile {
                             }
                             List<Integer> rot_map_int = Arrays.asList(rot_map_int_a);
                             String toBlif = ble.getAttribute("name");
-                            BlifNode node = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, null)));
+                            BlifNode node = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, false,null)));
                             for (Integer a = node.getInputNets().length - 1, b = 0; a >= 0; a--, b++) {
                                 String netToConnect = node.getInputNets()[a];
                                 int internal = clb_inputs.indexOf(netToConnect);
@@ -130,6 +125,22 @@ public class NetFile {
                             fpga.SetValue("fpga." + place_blk.getSettings().name + ".ble" +
                                     ble_count.toString() + ".4-lut", node.getLut4Settings());
 
+                            fpga.SetValue("fpga." + place_blk.getSettings().name + ".ble" +
+                                    ble_count.toString() + ".ff_out_to_out", node.getFlipFlopSetting());
+
+                            String ff_output = ((Element)ble.getElementsByTagName("outputs").item(3))
+                                    .getElementsByTagName("port").item(0).getTextContent();
+                            for (Route r : route.routes) {
+                                if (node.getFlipFlopSetting()[0] == 0) {
+                                    if (r.name.equals(ble.getAttribute("name"))) {
+                                        r.source.track = ble_count;
+                                    }
+                                } else {
+                                    if (r.name.equals(ff_output)) {
+                                        r.source.track = ble_count;
+                                    }
+                                }
+                            }
 
                             ii += 3; // ignore sublocks
                         }

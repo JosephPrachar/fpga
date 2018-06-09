@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BlifFile {
@@ -15,7 +16,7 @@ public class BlifFile {
         this.nodes = nodes;
     }
     private enum ParseState {
-        NONE, MODEL, INPUTS, OUTPUTS, NAMES, DONE
+        NONE, MODEL, INPUTS, OUTPUTS, LATCH, NAMES, DONE
     }
 
     public static BlifFile parseBlifFile(String filename) {
@@ -27,6 +28,8 @@ public class BlifFile {
             List<String> inputs = new ArrayList<>();
             List<String> outputs = new ArrayList<>();
             List<BlifNode> nodes = new ArrayList<>();
+            List<String> latch_net = new ArrayList<>();
+            List<String> latch_name = new ArrayList<>();
             String curLine, nextLine = br.readLine();
             ParseState curState = ParseState.NONE;
             List<String> linesToParse = new ArrayList<>();
@@ -52,6 +55,8 @@ public class BlifFile {
                         curState = ParseState.OUTPUTS;
                     } else if (curLine.startsWith(".names")) {
                         curState = ParseState.NAMES;
+                    } else if (curLine.startsWith(".latch")) {
+                        curState = ParseState.LATCH;
                     } else if (curLine.startsWith(".end")) {
                         curState = ParseState.DONE;
                     }
@@ -87,10 +92,15 @@ public class BlifFile {
                         curState = ParseState.NONE;
                     }
                     break;
+                case LATCH:
+                    latch_net.add(curLine.split(" ")[1]);
+                    latch_name.add(curLine.split(" ")[2]);
+                    curState = ParseState.NONE;
+                    break;
                 case NAMES:
                     linesToParse.add(curLine);
                     if (nextLine.startsWith(".")) {
-                        nodes.add(BlifNode.parseBlifNode(linesToParse));
+                        nodes.add(BlifNode.parseBlifNode(linesToParse, latch_net, latch_name));
                         linesToParse.clear();
                         curState = ParseState.NONE;
                         break;
