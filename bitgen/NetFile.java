@@ -96,33 +96,34 @@ public class NetFile {
                                     .getElementsByTagName("port").item(0).getTextContent().split(" ");
                             String[] rot_map = ble.getElementsByTagName("port_rotation_map").item(0).getTextContent().split(" ");
                             Integer[] ble_in_settings = new Integer[4];
-                            Integer[] rot_map_int = new Integer[4];
+                            Integer[] rot_map_int_a = new Integer[4];
                             for (int a = 0; a < 4; a++) {
                                 ble_in_settings[a] = ble_inputs[a].equals("open") ? -1 :
-                                        clb_inputs_pins[Integer.parseInt(ble_inputs[a].substring(ble_inputs[a].indexOf("[") + 1,
-                                                                                 ble_inputs[a].indexOf("]")))];
+                                        Integer.parseInt(ble_inputs[a].substring(ble_inputs[a].indexOf("[") + 1,
+                                                                                 ble_inputs[a].indexOf("]")));
                                 ble_in_settings[a] = route.remapPins(place_blk.settings.name, ble_in_settings[a]);
                                 // handle routeback paths mux setting
                                 ble_in_settings[a] += ble_inputs[a].contains("ble") ? 10 : 0;
-                                rot_map_int[a] = rot_map[a].equals("open") ? -1 : Integer.parseInt(rot_map[a]);
+                                rot_map_int_a[a] = rot_map[a].equals("open") ? -1 : Integer.parseInt(rot_map[a]);
                             }
-
-                            for (Integer a = 0; a < 4; a++) {
-                                if (rot_map_int[a] == -1)
-                                    continue;
-                                //fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
-                                //                ble_count.toString() + "in" + rot_map_int[a].toString() + ".sel",
-                                //                toByteArray(ble_in_settings[a] + 1, 4));
-                            }
+                            List<Integer> rot_map_int = Arrays.asList(rot_map_int_a);
                             String toBlif = ble.getAttribute("name");
                             BlifNode node = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, null)));
                             for (Integer a = node.getInputNets().length - 1, b = 0; a >= 0; a--, b++) {
                                 String netToConnect = node.getInputNets()[a];
                                 int internal = clb_inputs.indexOf(netToConnect);
-                                int external_track = clb_inputs_pins[internal];
-                                fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
-                                                ble_count.toString() + "in" + b.toString() + ".sel",
-                                        toByteArray( external_track + 1, 4));
+                                if (internal == -1) {
+                                    // routeback
+                                    int routeback_pin = ble_in_settings[rot_map_int.indexOf(a)];
+                                    fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
+                                                    ble_count.toString() + "in" + b.toString() + ".sel",
+                                            toByteArray(routeback_pin + 1, 4));
+                                } else {
+                                    int external_track = clb_inputs_pins[internal];
+                                    fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
+                                                    ble_count.toString() + "in" + b.toString() + ".sel",
+                                            toByteArray(external_track + 1, 4));
+                                }
 
                             }
 
