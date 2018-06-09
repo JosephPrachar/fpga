@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Dictionary;
 
 public class NetFile {
 
@@ -52,12 +53,44 @@ public class NetFile {
                             .getElementsByTagName("port").item(0).getTextContent().split(" ");
                     String[] clb_outputs = ((Element)blk.getElementsByTagName("outputs").item(0))
                             .getElementsByTagName("port").item(0).getTextContent().split(" ");
+                    Integer[] clb_inputs_pins = new Integer[clb_inputs.length];
+                    Integer[] clb_outputs_pins = new Integer[clb_outputs.length];
+                    for (int b = 0; b < clb_outputs.length; b++) {
+                        if (clb_outputs[b].equals("open")) {
+                            clb_outputs_pins[b] = -1;
+                        } else {
+                            clb_outputs_pins[b] = -1;
+                            for (Route r : route.routes) {
+                                if (r.name.equals(clb_outputs[b])) {
+                                    clb_outputs_pins[b] = r.source.track;
+                                }
+                            }
+                        }
+                    }
+                    for (int b = 0; b < clb_inputs.length; b++) {
+                        if (clb_inputs[b].equals("open")) {
+                            clb_inputs_pins[b] = -1;
+                        } else {
+                            clb_inputs_pins[b] = -1;
+                            for (Route r : route.routes) {
+                                if (r.name.equals(clb_inputs[b])) {
+                                    clb_inputs_pins[b] = r.path.get(1).track;
+                                }
+                            }
+                        }
+                    }
+
 
                     NodeList bles = blk.getElementsByTagName("block");
                     Integer ble_count = 0;
                     for (int ii = 0; ii < bles.getLength(); ii++) {
                         Element ble = (Element) bles.item(ii);
                         if (!ble.getAttribute("name").equals("open")) {
+                            for (Route r : route.routes) {
+                                if (r.name.equals(ble.getAttribute("name"))) {
+                                    r.source.track = ble_count;
+                                }
+                            }
                             String[] ble_inputs = ((Element)ble.getElementsByTagName("inputs").item(0))
                                     .getElementsByTagName("port").item(0).getTextContent().split(" ");
                             String[] rot_map = ble.getElementsByTagName("port_rotation_map").item(0).getTextContent().split(" ");
@@ -65,8 +98,8 @@ public class NetFile {
                             Integer[] rot_map_int = new Integer[4];
                             for (int a = 0; a < 4; a++) {
                                 ble_in_settings[a] = ble_inputs[a].equals("open") ? -1 :
-                                        Integer.parseInt(ble_inputs[a].substring(ble_inputs[a].indexOf("[") + 1,
-                                                                                 ble_inputs[a].indexOf("]")));
+                                        clb_inputs_pins[Integer.parseInt(ble_inputs[a].substring(ble_inputs[a].indexOf("[") + 1,
+                                                                                 ble_inputs[a].indexOf("]")))];
                                 ble_in_settings[a] = route.remapPins(place_blk.settings.name, ble_in_settings[a]);
                                 // handle routeback paths mux setting
                                 ble_in_settings[a] += ble_inputs[a].contains("ble") ? 10 : 0;
@@ -74,11 +107,11 @@ public class NetFile {
                             }
 
                             for (Integer a = 0; a < 4; a++) {
-                                if (rot_map_int[a] ==  -1)
+                                if (rot_map_int[a] == -1)
                                     continue;
                                 fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
                                                 ble_count.toString() + "in" + rot_map_int[a].toString() + ".sel",
-                                                toByteArray(ble_in_settings[a], 4));
+                                                toByteArray(ble_in_settings[a] + 1, 4));
                             }
                             String toBlif = ble.getAttribute("name");
                             byte[] settings = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, null))).getLut4Settings();

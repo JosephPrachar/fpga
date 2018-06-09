@@ -17,9 +17,9 @@ public class ConnectionBox extends Module implements Interconnect{
     public boolean createConnection(InterconnectPoint from, InterconnectPoint to) {
 
         if (drives.equals(to) && drivenBy.equals(from)) {
-            boolean res = SetValue(this.name + ".out" + to.track.toString() + ".sel", ((ProgMux)this.subModules[0]).getBits(from.track));
+            // plus one to take into account that high z is always pin 0 (default)
+            boolean res = SetValue(this.name + ".out" + to.track.toString() + ".sel", ((ProgMux)this.subModules[0]).getBits(from.track + 1));
             if (!res) {
-                res = SetValue(this.name + ".out" + to.track.toString(), ((ProgMux)this.subModules[0]).getBits(from.track));
                 return false;
             }
             return true;

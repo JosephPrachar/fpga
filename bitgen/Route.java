@@ -1,6 +1,7 @@
 import java.util.List;
 
 public class Route {
+    public String name;
     public List<InterconnectPoint> path;
     public InterconnectPoint source;
     public InterconnectPoint sink;

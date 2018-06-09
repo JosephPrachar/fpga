@@ -1,7 +1,7 @@
 module adder(a, b, out);
-    input [3:0] a;
-    input [3:0] b;
-    output [3:0] out;
+    input [1:0] a;
+    input [1:0] b;
+    output [1:0] out;
 
-    assign out = a + b;
+    assign out = a & b;
 endmodule

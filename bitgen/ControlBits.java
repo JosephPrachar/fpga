@@ -14,6 +14,10 @@ public class ControlBits {
 
     @Override
     public String toString() {
-        return super.toString();
+        String toRet = "";
+        for (int i = 0; i < values.length; i++) {
+            toRet = ((Byte)values[i]).toString() + toRet;
+        }
+        return toRet;
     }
 }

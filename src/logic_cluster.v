@@ -23,7 +23,7 @@ module logic_cluster #(parameter NUM_BLE = 5, parameter NUM_INPUTS = 11)( // the
         .prog_in(prog_in),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({in, ble_outputs}),
+        .in({ble_outputs, in[9:0], 1'd0}),
         .prog_out(prog_connect[1]),
         .out(ble_inputs));  
     

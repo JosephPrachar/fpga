@@ -91,7 +91,7 @@ module fpgav2(
         .prog_en(prog_en),
         .in({ high_z[2:1], west_i_bus, high_z[0]}),
         .prog_out(prog_connection[4]),
-        .out(nw_bus)
+        .out(sw_bus)
         );
     disjoint_switch #(10) west_switch(
             .prog_in(prog_connection[4]),
@@ -107,7 +107,7 @@ module fpgav2(
             .prog_in(prog_connection[5]),
             .prog_clk(prog_clk),
             .prog_en(prog_en),
-            .in({high_z[5:1], sw_bus, high_z[0]}),
+            .in({high_z[5:1], nw_bus, high_z[0]}),
             .prog_out(prog_connection[6]),
             .out(west_o_bus)
             );
@@ -144,7 +144,7 @@ module fpgav2(
         .prog_in(prog_connection[9]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({1'dz, sw_logic_in, high_z[0]}),
+        .in({1'dz, sw_logic_in}),
         .clk(clk),
         .out(sw_logic_out),
         .prog_out(prog_connection[10])
@@ -276,7 +276,7 @@ module fpgav2(
         .prog_clk(prog_clk),
         .prog_en(prog_en),
         .l(east_bus),
-        .r(10'dz),
+        .r(high_z[9:0]),
         .t(ne_bus),
         .b(se_bus),
         .prog_out(prog_connection[24])

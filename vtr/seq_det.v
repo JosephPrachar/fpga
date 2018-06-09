@@ -1,4 +1,4 @@
-// The sequence being detected is "1011"001010 or One Zero One One 
+// The sequence being detected is "1011001010" or One Zero One One 
 module Sequence_Detector_MOORE_Verilog(
 input clock,
 input reset, // reset input

@@ -22,6 +22,11 @@ module Seven_segment_LED_Display_Controller(
 
     always @(*)
     begin
+        if (enable == 0)
+            ns <= 0;
+        else if (up == 
+            
+            
         nextnum = curnum + 1;
     end
 

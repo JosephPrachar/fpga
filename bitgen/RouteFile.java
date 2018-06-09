@@ -31,20 +31,25 @@ public class RouteFile {
 
             RouteFile rf = new RouteFile(new ArrayList<>());
             Route toAdd = null;
+            String curNet = null;
             String curLine;
 
             while ((curLine = br.readLine()) != null) {
 
-                if (curLine.contains("OPIN")) {
+                if (curLine.contains("Net")) {
+                    curNet = curLine.substring(curLine.indexOf("(") + 1, curLine.indexOf(")"));
+                } else if (curLine.contains("OPIN")) {
                     int x = Integer.parseInt(curLine.substring(curLine.indexOf("(") + 1, curLine.indexOf(",")));
                     int y = Integer.parseInt(curLine.substring(curLine.indexOf(",") + 1, curLine.indexOf(")")));
                     int subblk = -1;
                     toAdd = new Route(new ArrayList<>());
+                    toAdd.name = curNet;
                     if (x == 0 || x == 3 || y == 0 || y == 3) {
                         subblk = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pad") + 5)) / 2;
                         toAdd.path.add(new InterconnectPoint(Block.IOBlockToBank(Block.posToName(x, y, subblk)), subblk));
                     } else {
-                        subblk = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pin") + 5));
+                        subblk = Integer.parseInt(curLine.substring(curLine.indexOf("Pin") + 5, curLine.indexOf("Pin") + 7).replace(" ", ""));
+                        if (subblk >= 10) subblk -= 10;
                         toAdd.path.add(new InterconnectPoint(Block.posToName(x, y, subblk), subblk));
                     }
                 } else if (curLine.contains("CHANX") || curLine.contains("CHANY")) {
@@ -53,6 +58,7 @@ public class RouteFile {
                     int y = Integer.parseInt(curLine.substring(curLine.indexOf(",") + 1, curLine.indexOf(")")));
                     if (toAdd == null) {
                         toAdd = new Route(new ArrayList<>());
+                        toAdd.name = curNet;
                         //toAdd.path.add(rf.routes.get(rf.routes.size() - 1).source);
                     }
                     toAdd.path.add(new Channel(x, y,vertical, Integer.parseInt(""+curLine.charAt(curLine.indexOf("Track") + 7))));
@@ -65,7 +71,8 @@ public class RouteFile {
                         subblk = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pad") + 5)) / 2;
                         toAdd.path.add(new InterconnectPoint(Block.IOBlockToBank(Block.posToName(x, y, subblk)), subblk));
                     } else {
-                        pin = Integer.parseInt(""+curLine.charAt(curLine.indexOf("Pin") + 5));
+                        //pin = Integer.parseInt(curLine.substring(curLine.indexOf("Pin") + 5, curLine.indexOf("Pin") + 7).replace(" ", ""));
+                        pin = toAdd.path.get(1).track;
                         toAdd.path.add(new InterconnectPoint(Block.posToName(x, y, 0), pin));
                     }
                     toAdd.routeComplete();

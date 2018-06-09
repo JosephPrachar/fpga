@@ -34,7 +34,7 @@ public class BlifNode {
         byte[] lut4Settings = new byte[16];
         for (int i = 1; i < lines.size(); i++) {
             String indexStr = lines.get(i).split(" ")[0];
-            indexStr = "----".substring(0, 4 - indexStr.length()) + indexStr;
+            indexStr = "----".substring(0, 4 - indexStr.length()) + new StringBuilder(indexStr).reverse().toString();
             int iDontCare;
 
             // account for don't care bits

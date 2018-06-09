@@ -62,11 +62,13 @@ public class Switch extends Module implements Interconnect {
             // Each prog mux is connected to high z for the 2'b11 setting
             return new byte[]{0, 0};
         }
-        int diff = desiredConn - muxSide;
+        int diff = (desiredConn - muxSide);
         if (diff == 0) {
             return null;
+        } else if (diff < 0){
+            diff += 4;
         }
-        return new byte[] {(byte)(diff & 1),(byte)((diff & 2) >> 1)};
+        return ((ProgMux)this.subModules[0]).getBits(diff);
     }
     private int MuxSetting(int muxSide, ControlBits setting) {
         if (setting.values.length != 2) {

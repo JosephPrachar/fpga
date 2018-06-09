@@ -29,7 +29,7 @@ public abstract class Module {
         }
         for (int i = 0; i < fields.length; i++) {
             ControlBits cur = fields[i];
-            for (int j = cur.values.length - 1; j >= 0; j--) {
+            for (int j = 0; j < cur.values.length; j++) {
                 toReturn[cur_pos++] = cur.values[j];
             }
         }
