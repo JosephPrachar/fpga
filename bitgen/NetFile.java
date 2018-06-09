@@ -11,7 +11,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Dictionary;
+import java.util.List;
 
 public class NetFile {
 
@@ -49,11 +51,10 @@ public class NetFile {
                         fpga.SetValue("fpga." + place_blk.getSettings().name + ".dir", new byte[] {1});
                     }
                 } else if (place_blk.settings instanceof LogicCluster) {
-                    String[] clb_inputs = ((Element)blk.getElementsByTagName("inputs").item(0))
-                            .getElementsByTagName("port").item(0).getTextContent().split(" ");
+                    List<String> clb_inputs = Arrays.asList(((Element) blk.getElementsByTagName("inputs").item(0)).getElementsByTagName("port").item(0).getTextContent().split(" "));
                     String[] clb_outputs = ((Element)blk.getElementsByTagName("outputs").item(0))
                             .getElementsByTagName("port").item(0).getTextContent().split(" ");
-                    Integer[] clb_inputs_pins = new Integer[clb_inputs.length];
+                    Integer[] clb_inputs_pins = new Integer[clb_inputs.size()];
                     Integer[] clb_outputs_pins = new Integer[clb_outputs.length];
                     for (int b = 0; b < clb_outputs.length; b++) {
                         if (clb_outputs[b].equals("open")) {
@@ -67,13 +68,13 @@ public class NetFile {
                             }
                         }
                     }
-                    for (int b = 0; b < clb_inputs.length; b++) {
-                        if (clb_inputs[b].equals("open")) {
+                    for (int b = 0; b < clb_inputs.size(); b++) {
+                        if (clb_inputs.get(b).equals("open")) {
                             clb_inputs_pins[b] = -1;
                         } else {
                             clb_inputs_pins[b] = -1;
                             for (Route r : route.routes) {
-                                if (r.name.equals(clb_inputs[b])) {
+                                if (r.name.equals(clb_inputs.get(b))) {
                                     clb_inputs_pins[b] = r.path.get(1).track;
                                 }
                             }
@@ -109,14 +110,24 @@ public class NetFile {
                             for (Integer a = 0; a < 4; a++) {
                                 if (rot_map_int[a] == -1)
                                     continue;
-                                fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
-                                                ble_count.toString() + "in" + rot_map_int[a].toString() + ".sel",
-                                                toByteArray(ble_in_settings[a] + 1, 4));
+                                //fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
+                                //                ble_count.toString() + "in" + rot_map_int[a].toString() + ".sel",
+                                //                toByteArray(ble_in_settings[a] + 1, 4));
                             }
                             String toBlif = ble.getAttribute("name");
-                            byte[] settings = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, null))).getLut4Settings();
+                            BlifNode node = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, null)));
+                            for (Integer a = node.getInputNets().length - 1, b = 0; a >= 0; a--, b++) {
+                                String netToConnect = node.getInputNets()[a];
+                                int internal = clb_inputs.indexOf(netToConnect);
+                                int external_track = clb_inputs_pins[internal];
+                                fpga.SetValue("fpga." + place_blk.getSettings().name + ".ic.ble" +
+                                                ble_count.toString() + "in" + b.toString() + ".sel",
+                                        toByteArray( external_track + 1, 4));
+
+                            }
+
                             fpga.SetValue("fpga." + place_blk.getSettings().name + ".ble" +
-                                    ble_count.toString() + ".4-lut", settings);
+                                    ble_count.toString() + ".4-lut", node.getLut4Settings());
 
 
                             ii += 3; // ignore sublocks

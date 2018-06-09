@@ -1,6 +1,7 @@
 import com.sun.xml.internal.ws.util.StringUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class BlifNode {
@@ -34,7 +35,7 @@ public class BlifNode {
         byte[] lut4Settings = new byte[16];
         for (int i = 1; i < lines.size(); i++) {
             String indexStr = lines.get(i).split(" ")[0];
-            indexStr = "----".substring(0, 4 - indexStr.length()) + new StringBuilder(indexStr).reverse().toString();
+            indexStr = "----".substring(0, 4 - indexStr.length()) + indexStr;
             int iDontCare;
 
             // account for don't care bits
@@ -67,6 +68,6 @@ public class BlifNode {
     }
 
     public byte[] getLut4Settings() {
-        return lut4Settings;
+        return this.lut4Settings;
     }
 }
