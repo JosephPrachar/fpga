@@ -9,19 +9,13 @@ module conn #(parameter INPUTS = 16, parameter OUTPUTS = 20)(
     output [OUTPUTS-1:0]out
     );
 
-    wire [OUTPUTS-2:0]prog_connect;
-    
-    prog_mux16 mux_start (
-        .in(in),
-        .prog_in(prog_in),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .out(out[0]),
-        .prog_out(prog_connect[0]));
+    wire [OUTPUTS - 1:0]prog_connect;
+    assign prog_connect[0] = prog_in;
+    assign prog_out = prog_connect[OUTPUTS - 1];
     
     genvar index;
     generate
-    for (index=1; index < OUTPUTS - 1; index=index+1) begin
+    for (index=0; index < OUTPUTS ; index=index+1) begin
         prog_mux16 mux_i (
             .in(in),
             .prog_in(prog_connect[index - 1]),
@@ -31,13 +25,5 @@ module conn #(parameter INPUTS = 16, parameter OUTPUTS = 20)(
             .prog_out(prog_connect[index]));
     end
     endgenerate
-    
-    prog_mux16 mux_end (
-        .in(in),
-        .prog_in(prog_connect[OUTPUTS - 2]),
-        .prog_clk(prog_clk),
-        .prog_en(prog_en),
-        .out(out[OUTPUTS - 1]),
-        .prog_out(prog_out));
     
 endmodule

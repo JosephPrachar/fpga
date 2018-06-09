@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 
 module io_bank #(parameter SIZE = 5) (
-    inout [SIZE-1:0]fpga,
+    input [SIZE-1:0]to_pad,
+    output [SIZE-1:0]from_pad,
     inout [SIZE-1:0]io_pad,
     input prog_in,
     input prog_clk,
@@ -18,7 +19,8 @@ module io_bank #(parameter SIZE = 5) (
     generate
     for (index=0; index < SIZE; index=index+1) begin
         io_block io_block_i (
-            .fpga(fpga[index]),
+            .to_pad(to_pad[index]),
+            .from_pad(from_pad[index]),
             .io_pad(io_pad[index]),
             .prog_in(prog_connect[index]),
             .prog_clk(prog_clk),

@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 
 module io_block(
-    inout fpga,
+    input to_pad,
+    output from_pad,
     inout io_pad,
     input prog_in,
     input prog_clk,
@@ -23,6 +24,6 @@ module io_block(
         .prog_out(prog_out),
         .control(control));
     
-    assign fpga   = (control[`DIR] == `INPUT) ? io_pad : 'dz;
-    assign io_pad = (control[`DIR] == `INPUT && control[`PULL_DOWN] == control[`PULL_UP]) ? 'dz    : fpga;
+    assign from_pad = (control[`DIR] == `INPUT) ? io_pad : 'dz;
+    assign io_pad   = (control[`DIR] == `INPUT) ? 'dz    : to_pad;
 endmodule

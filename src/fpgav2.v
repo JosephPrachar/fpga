@@ -14,10 +14,14 @@ module fpgav2(
     wire [24:0] prog_connection;
     assign prog_out = prog_connection[24];
     
-    wire [4:0] north_io_bus;
-    wire [4:0] east_io_bus;
-    wire [4:0] south_io_bus;
-    wire [4:0] west_io_bus;
+    wire [4:0] north_i_bus;
+    wire [4:0] east_i_bus;
+    wire [4:0] south_i_bus;
+    wire [4:0] west_i_bus;
+    wire [4:0] north_o_bus;
+    wire [4:0] east_o_bus;
+    wire [4:0] south_o_bus;
+    wire [4:0] west_o_bus;
     
     wire [9:0] north_pre_io;
     wire [9:0] south_pre_io;
@@ -49,7 +53,8 @@ module fpgav2(
         .prog_clk(prog_clk),
         .prog_en(prog_en),
         .io_pad(io[4:0]),
-        .fpga(north_io_bus),
+        .from_pad(north_i_bus),
+        .to_pad(north_o_bus),
         .prog_out(prog_connection[0])
     );
     io_bank #(5) east_bank(
@@ -57,7 +62,8 @@ module fpgav2(
         .prog_clk(prog_clk),
         .prog_en(prog_en),
         .io_pad(io[9:5]),
-        .fpga(east_io_bus),
+        .from_pad(east_i_bus),
+        .to_pad(east_o_bus),
         .prog_out(prog_connection[1])
     );
     io_bank #(5) south_bank(
@@ -65,7 +71,8 @@ module fpgav2(
         .prog_clk(prog_clk),
         .prog_en(prog_en),
         .io_pad(io[14:10]),
-        .fpga(south_io_bus),
+        .from_pad(south_i_bus),
+        .to_pad(south_o_bus),
         .prog_out(prog_connection[2])
     );
     io_bank #(5) west_bank(
@@ -73,7 +80,8 @@ module fpgav2(
         .prog_clk(prog_clk),
         .prog_en(prog_en),
         .io_pad(io[19:15]),
-        .fpga(west_io_bus),
+        .from_pad(west_i_bus),
+        .to_pad(west_o_bus),
         .prog_out(prog_connection[3])
     );
     
@@ -81,7 +89,7 @@ module fpgav2(
         .prog_in(prog_connection[3]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({ high_z[2:1], west_io_bus, high_z[0]}),
+        .in({ high_z[2:1], west_i_bus, high_z[0]}),
         .prog_out(prog_connection[4]),
         .out(nw_bus)
         );
@@ -101,7 +109,7 @@ module fpgav2(
             .prog_en(prog_en),
             .in({high_z[5:1], sw_bus, high_z[0]}),
             .prog_out(prog_connection[6]),
-            .out(west_io_bus)
+            .out(west_o_bus)
             );
             
     connection_box #(3, 8, 10) sw_cb (
@@ -148,14 +156,14 @@ module fpgav2(
         .prog_en(prog_en),
         .in({high_z[5:1], south_pre_io, high_z[0]}),
         .prog_out(prog_connection[11]),
-        .out(south_io_bus)
+        .out(south_o_bus)
         );
                 
     connection_box #(3, 8, 10) south_input_cb (
         .prog_in(prog_connection[11]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({high_z[2:1], south_io_bus, high_z[0]}),
+        .in({high_z[2:1], south_i_bus, high_z[0]}),
         .prog_out(prog_connection[12]),
         .out(south_pre_io)
         );
@@ -164,7 +172,7 @@ module fpgav2(
         .prog_in(prog_connection[12]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({high_z[2:1], east_io_bus, high_z[0]}),
+        .in({high_z[2:1], east_i_bus, high_z[0]}),
         .prog_out(prog_connection[13]),
         .out(se_bus)
         );
@@ -224,14 +232,14 @@ module fpgav2(
         .prog_en(prog_en),
         .in({high_z[5:1], north_pre_io, high_z[0]}),
         .prog_out(prog_connection[19]),
-        .out(north_io_bus)
+        .out(north_o_bus)
         );
                     
     connection_box #(3, 8, 10) north_input_cb (
         .prog_in(prog_connection[19]),
         .prog_clk(prog_clk),
         .prog_en(prog_en),
-        .in({high_z[2:1], north_io_bus, high_z[0]}),
+        .in({high_z[2:1], north_i_bus, high_z[0]}),
         .prog_out(prog_connection[20]),
         .out(north_pre_io)
         );                        
@@ -260,7 +268,7 @@ module fpgav2(
         .prog_en(prog_en),
         .in({high_z[5:1], ne_bus, high_z[0]}),
         .prog_out(prog_connection[23]),
-        .out(east_io_bus)
+        .out(east_o_bus)
         );
                 
     disjoint_switch #(10) east_switch(
