@@ -60,6 +60,7 @@ public class NetFile {
                         if (clb_outputs[b].equals("open")) {
                             clb_outputs_pins[b] = -1;
                         } else {
+                            clb_outputs[b] = blif.flipFlopToNet(clb_outputs[b]);
                             clb_outputs_pins[b] = -1;
                             for (Route r : route.routes) {
                                 if (r.name.equals(clb_outputs[b])) {
@@ -75,11 +76,14 @@ public class NetFile {
                             clb_inputs_pins[b] = -1;
                             for (Route r : route.routes) {
                                 if (r.name.equals(clb_inputs.get(b))) {
-                                    clb_inputs_pins[b] = r.path.get(1).track;
+                                    clb_inputs_pins[b] = r.path.get(r.path.size() - 2).track;
                                 }
                             }
+                            clb_inputs.set(b, blif.flipFlopToNet(clb_inputs.get(b)));
                         }
                     }
+
+
 
 
                     NodeList bles = blk.getElementsByTagName("block");
@@ -93,6 +97,7 @@ public class NetFile {
                             Integer[] ble_in_settings = new Integer[4];
                             Integer[] rot_map_int_a = new Integer[4];
                             for (int a = 0; a < 4; a++) {
+                                ble_inputs[a] = blif.flipFlopToNet(ble_inputs[a]);
                                 ble_in_settings[a] = ble_inputs[a].equals("open") ? -1 :
                                         Integer.parseInt(ble_inputs[a].substring(ble_inputs[a].indexOf("[") + 1,
                                                                                  ble_inputs[a].indexOf("]")));
@@ -102,7 +107,7 @@ public class NetFile {
                                 rot_map_int_a[a] = rot_map[a].equals("open") ? -1 : Integer.parseInt(rot_map[a]);
                             }
                             List<Integer> rot_map_int = Arrays.asList(rot_map_int_a);
-                            String toBlif = ble.getAttribute("name");
+                            String toBlif = blif.flipFlopToNet(ble.getAttribute("name"));
                             BlifNode node = blif.getNodes().get(blif.getNodes().indexOf(new BlifNode(null, toBlif, false,null)));
                             for (Integer a = node.getInputNets().length - 1, b = 0; a >= 0; a--, b++) {
                                 String netToConnect = node.getInputNets()[a];
@@ -128,16 +133,18 @@ public class NetFile {
                             fpga.SetValue("fpga." + place_blk.getSettings().name + ".ble" +
                                     ble_count.toString() + ".ff_out_to_out", node.getFlipFlopSetting());
 
-                            String ff_output = ((Element)ble.getElementsByTagName("outputs").item(3))
-                                    .getElementsByTagName("port").item(0).getTextContent();
                             for (Route r : route.routes) {
                                 if (node.getFlipFlopSetting()[0] == 0) {
                                     if (r.name.equals(ble.getAttribute("name"))) {
-                                        r.source.track = ble_count;
+                                        if (!(r.source instanceof Channel))
+                                            r.source.track = ble_count;
                                     }
                                 } else {
+                                    String ff_output = ((Element)ble.getElementsByTagName("outputs").item(3))
+                                            .getElementsByTagName("port").item(0).getTextContent();
                                     if (r.name.equals(ff_output)) {
-                                        r.source.track = ble_count;
+                                        if (!(r.source instanceof Channel))
+                                            r.source.track = ble_count;
                                     }
                                 }
                             }

@@ -7,16 +7,30 @@ public class BlifFile {
     private String model;
     private String[] inputs;
     private String[] outputs;
+    List<String> latch_net;
+    List<String> latch_name;
     private List<BlifNode> nodes;
 
-    public BlifFile(String model, String[] inputs, String[] outputs, List<BlifNode> nodes) {
+    public BlifFile(String model, String[] inputs, String[] outputs, List<BlifNode> nodes,
+                    List<String> latch_net, List<String> latch_name) {
         this.model = model;
         this.inputs = inputs;
         this.outputs = outputs;
         this.nodes = nodes;
+        this.latch_net = latch_net;
+        this.latch_name = latch_name;
     }
     private enum ParseState {
         NONE, MODEL, INPUTS, OUTPUTS, LATCH, NAMES, DONE
+    }
+
+    public String flipFlopToNet(String ff) {
+        for (int i = 0; i < latch_name.size(); i++) {
+            if (ff.equals(latch_name.get(i))) {
+                return latch_net.get(i);
+            }
+        }
+        return ff;
     }
 
     public static BlifFile parseBlifFile(String filename) {
@@ -113,7 +127,7 @@ public class BlifFile {
                 return null;
             } else {
                 return new BlifFile(model, inputs.toArray(new String[inputs.size()]),
-                        outputs.toArray(new String[outputs.size()]), nodes);
+                        outputs.toArray(new String[outputs.size()]), nodes, latch_net, latch_name);
             }
 
         } catch (FileNotFoundException ex) {

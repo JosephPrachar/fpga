@@ -34,7 +34,7 @@ public class BlifNode {
                 int index;
                 if ((index = latch_name.indexOf(j)) != -1) {
                     inputs.add(latch_nets.get(index));
-                } else if (!j.equals(".names")){
+                } else if (!j.equals(".names") && !j.equals("") && !j.equals("\\")){
                     inputs.add(j);
                 }
             }
@@ -50,14 +50,27 @@ public class BlifNode {
         boolean ff = (latch_nets.indexOf(outputNet) != -1);
 
         byte[] lut4Settings = new byte[16];
-        for (int i = 1; i < lines.size(); i++) {
+
+        if (lines.get(line).equals("1 1")) {
+            latch_nets.add(inputNets[0]);
+            latch_name.add(outputNet);
+        }
+
+        boolean one = lines.get(line).split(" ")[1].equals("1");
+        if (!one) {
+            lut4Settings = new byte[] { 1, 1, 1, 1,
+                                        1, 1, 1, 1,
+                                        1, 1, 1, 1,
+                                        1, 1, 1, 1};
+        }
+        for (int i = line; i < lines.size(); i++) {
             String indexStr = lines.get(i).split(" ")[0];
             indexStr = "----".substring(0, 4 - indexStr.length()) + indexStr;
             int iDontCare;
 
             // account for don't care bits
             if ((iDontCare = indexStr.indexOf("-")) == -1) {
-                lut4Settings[Integer.parseInt(indexStr, 2)] = 1;
+                lut4Settings[Integer.parseInt(indexStr, 2)] = (byte)(one ? 1 : 0);
             } else {
                 lines.add(indexStr.replaceFirst("-", "0"));
                 lines.add(indexStr.replaceFirst("-", "1"));

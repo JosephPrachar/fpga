@@ -72,7 +72,7 @@ public class RouteFile {
                         toAdd.path.add(new InterconnectPoint(Block.IOBlockToBank(Block.posToName(x, y, subblk)), subblk));
                     } else {
                         //pin = Integer.parseInt(curLine.substring(curLine.indexOf("Pin") + 5, curLine.indexOf("Pin") + 7).replace(" ", ""));
-                        pin = toAdd.path.get(1).track;
+                        pin = toAdd.path.get(toAdd.path.size() - 1).track;
                         toAdd.path.add(new InterconnectPoint(Block.posToName(x, y, 0), pin));
                     }
                     toAdd.routeComplete();
