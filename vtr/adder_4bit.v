@@ -1,4 +1,4 @@
-// The sequence being detected is "1011001010" or One Zero One One 
+// The sequence being detected is "101100100" or One Zero One One 
 module Sequence_Detector_MOORE_Verilog(
 input clock,
 input reset, // reset input
@@ -16,7 +16,7 @@ parameter
   _101100         = 4'b0110,
   _1011001        = 4'b0111,
   _10110010       = 4'b1000,
-  _101100101      = 4'b1001;
+  _101100100      = 4'b1001;
 reg [3:0] current_state, next_state; // current state and next state
 // sequential memory of the Moore FSM
 always @(posedge clock, posedge reset)
@@ -81,15 +81,15 @@ begin
  end
  _10110010:begin
   if(sequence_in==0)
-   next_state <= _101100101;
+   next_state <= _101100100;
   else
    next_state <= _1;
  end
- _101100101:begin
+ _101100100:begin
   if(sequence_in==0)
-   next_state <= _10;
+   next_state <= _0;
   else
-   next_state <= _1011;
+   next_state <= _1;
  end
  default:next_state <= _0;
  endcase

@@ -324,7 +324,7 @@ arbitrary design decisions. From research, it is clear what a generalized FPGA d
 looks like and how it is routed. What has become increasingly difficult is specifying 
 the actual values of the device. Width of interconnect buses, interconnect redundancy,
 and routing connectedness to IO blocks are all examples of things that are very 
-much “hand waved” based on all available research. The following three 
+much “hand waved” based on all available research. The following 
 sections represent a rough hashing out of such values. These were constantly 
 re-evaluated throughout the design process to insure that each value provides a meaningful 
 connection towards the final 10-input, 10-output, 10-state FSM implementation goal.
@@ -338,10 +338,16 @@ connection towards the final 10-input, 10-output, 10-state FSM implementation go
 
 The justification for the aim to create a device which can emulate any 10-input, 10-output,
 10-state FSM is the hope that such a specific goal will help to ground the abstract
-nature of FPGA's. With this goal in mind, design decisions 'tiebreakers' can be
+nature of FPGA's. With this goal in mind, design decision 'tiebreakers' can be
 handled more easily because the answer to the difficult question of deciding on important
 variables is always "Which value will give better results to the goal FSM circut?".
 The basic setup of this FSM type design can be seen in Figure \ref{fig:fsm} above.
+The FSM structure also provides the use of storage elements without muddying the division
+between clock signals and data signals. On real FPGA's data signals can be used as global
+clock signals and fed into flip flops where multiple clocks can be selected from. This
+would create additional complexity vs a FSM targeted system where the next state is
+updated on each clock rising edge.
+
 
 \newpage
 \section{Circuit Design}
@@ -381,6 +387,25 @@ of the use of global routing resources by allowing a number of signals
 in well designed circuits to avoid going through the center switch block (where each signal can
 consume a maximum of 10\% of the total global wires).
 
+On an implementation note, the use of tri-state buses is prevalent throughout this Verilog
+design as the entire FPGA fabric is based on the idea of configurable bidirectional buses
+between each of the switches. From this use of tri-state comes additional complexity in
+terms of creating the bitstream with defaults that ensure when a prog mux is not configured
+from its default state (zero's) that it does not drive the wire it is connected to.
+This was accomplished with the creation of a high z line which is connected to each non-interconnect
+matrix connection box's zero bit input. This ensures that the hardware design supports the idea
+of a default zero state. This idea is also carried over to the switch block where any wire
+being driven with the default select bits ("00") is connected to a high z line.
+
+Through debugging many undefined signal simulation errors it was found that this strategy
+would not prove to be successful with the interconnect matrix. The problem was that any high z
+wire which was an input into a look up table would cause the lut output to be undefined (yes,
+even though the result would have been the same had that line been either a 1 or a 0!).
+This default high z wire was replaced with a constant ground for interconnect matrices.
+It is not clear whether this precaution would actually be necessary for a real chip design
+since the wire would be forced to either a 1 or 0, although it was required for simulation.
+% talk about this in conclusion!!
+
 \subsection{Programming Circuit}
 
 \begin{figure}[htb]
@@ -396,7 +421,8 @@ the circuit (Figure \ref{fig:prog_diag}). The programming order chosen was based
 spatially close blocks. Originally, this was done with only clock and data
 wires. An additional enable wire was added to both decrease the probability of the circuit
 being changed by noise during use, and to more easily internally detect when the
-in-circuit programming was complete.
+in-circuit programming was complete. Overall there are 1480 configuration bits in one 
+bitstream to specify an implemented design for this architecture.
 
 \subsection{Basic Logic Element}
 
@@ -410,8 +436,8 @@ in-circuit programming was complete.
 The design of the BLE block is very basic. The block design can be seen in Figure 
 \ref{fig:ble} and the verilog code can be found in the code listing section of the
 appendix (Figure \ref{code:ble}). The BLE contains 3 2-bit muxes,
-1 16-bit mux, and 2 19 bit shift registers, 16 bits of which are used in the 4-
-LUT. The remaining 3 bits are used to: enable the feedback path from the flip flop 
+1 16-bit mux, and 2 19-bit shift registers, 16-bits of which are used in the
+4-LUT. The remaining 3 bits are used to: enable the feedback path from the flip flop 
 to input A of the 4-LUT, enable the use of input D as the enable input to the flip 
 flop, and lastly to select the flip flop as output or the 4-LUT as the output. This 
 design will aid in simplicity of circuit verification and in implementation routing.
@@ -420,7 +446,8 @@ simulation as the circuit would enter into invalid states while being programmed
 To combat this problem, there are two banks of shift registers. The first is used 
 only while the device is being programmed (as told by the prog{\_}enable signal). The 
 second is only filled when the final control signals are in the programming shift 
-registers (falling edge of prog{\_}enable signal).
+registers (falling edge of prog{\_}enable signal). In total, there are 19 configuration
+bits to fully specify BLE functionality.
 
 \subsection{Connection Box}
 
@@ -442,13 +469,19 @@ Once the prog mux block is created, the design for a connection box is relativel
 as described in Section \ref{Conn_Box}. A prog mux is created for each output pin. The
 size (number of select bits) of the prog mux is determined by taking the ceiling of
 the log base 2 of the number of inputs.
-The use of Verilog parameters (as seen in Figure \ref{code:prog_mux} and Figure \ref{code:conn_box})
+The use of Verilog parameters (as seen in Listing \ref{code:prog_mux} and Listing \ref{code:conn_box})
 makes both the connection box and the prog mux reusable
 throughout the rest of the HDL design.
 
+There are 4 locations where the connection box block is used: getting inputs from the
+IO blocks to the fabric, getting outputs from the fabric to the IO blocks, getting
+logic cluster outputs into the fabric, and as an interconnect matrix inside of a logic
+cluster. Respectively these implementations require 30 bits, 20 bits, 30 bits, and 80 bits
+to configure.
+
 \subsection{Logic Cluster}
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{LogicCluster}
     \caption{Logic cluster diagram (including output connection box)}
@@ -456,27 +489,30 @@ throughout the rest of the HDL design.
 \end{figure}
 
 The logic cluster is a combination of a connection box and multiple basic logic elements
-as discussed in Section \ref{logicCluster}. The number of ble's was chosen to be 5. This
+as discussed in Section \ref{logicCluster}. The number of BLE's was chosen to be 5. This
 was a value that seemed reasonable in regards to how much total memory and logic resources
  it produced. It also allowed the use of 16 input prog muxes (instead of 32 input) with a
-10 bit fabric bus. The choice of 6 ble's also would have allowed the use of 16 input prog muxes but
-5 ble's times 4 logic clusters already provided more than enough resources to achieve the
-FSM goal.
+10-bit fabric bus. The choice of 6 BLE's also would have allowed the use of 16 input prog muxes but
+5 BLE's times 4 logic clusters already provided more than enough resources to achieve the
+FSM goal. A complete logic cluster takes 175 bits to program (this number is the sum of all
+configuration bits of the sub blocks as the logic cluster itself has no additional
+configuration capabilities).
 
 The graphic in Figure \ref{fig:logic_cluster} is a good way to represent the entire view
 of a logic cluster. This diagram was printed out and used to walk though the place and route problem in
-complete detail. Lines can be drawn in both connection boxes to show connections to and from ble's while
-gate level diagrams can be drawn in each ble block and then translated into the look up table
+complete detail. Lines can be drawn in both connection boxes to show connections to and from BLE's while
+gate level diagrams can be drawn in each BLE block and then translated into the look up table
 equivalent. This process was done many times during development to ensure understanding of
 how everything fit together.
 
 \subsection{Switch Block}
 
 The switch block design uses the disjoint connection pattern to create the simplest
-possible fabric structure. The block has 4 10 bit wide bus connections which are all
+possible fabric structure. The block has 4 10-bit wide bus connections which are all
 bidirectional. The internal makeup of the switch block is (like the connection box) just
 made up of many prog muxes driving the output pins of each pin of the bus connections with
-an additional connection for not driving the output (High Z).
+an additional connection for not driving the output (High Z). To fully specify the configuration
+of a switch block 80 bits of information are required.
 
 
 \subsection{Input/Output Block}
@@ -486,7 +522,8 @@ The IO block was influenced by the complicated Xilinx model referenced in Figure
 (a few tri-state drivers) plus pull up/down resistors with pass transistor 
 enables, and the shift registers required to program it. The pull-up and pull-down
 resistors however, are not applicable when dealing with this Verilog implementation
-and static digital simulation.
+and static digital simulation. Due to the simplicity of this block, only 3 bits are
+required to program the IO block.
 
 \newpage
 \section{Verilog-to-Routing}
@@ -510,7 +547,7 @@ While the original goal of this project was to create an FPGA from scratch (incl
 the software tools) the use of VTR was deemed to be a good decision for two main reasons.
 First, VTR is a sort of academic standard and provides all sorts of additional
 features (not used in this project) to help benchmark and compare FPGA architectures.
-Therefore, this was seen as a good opportunity to learn a new toolset in a hands on manor for
+Therefore, this was seen as a good opportunity to learn a new toolset in a hands-on manor for
 possible future projects in this area of study. Second, The algorithms that VTR handles
 are REALLY complex (NP-Hard) and also creates the opportunity
 to implement Verilog designs instead of hand produced netlists and logic. Specifically the VPR tool
@@ -536,7 +573,7 @@ possible variable within an architecture including: setup-hold times, switch blo
 connection strategy, block locations, BLE size, and much more. For this project, all
 timing information was deemed to be out of scope so there are placeholder times, resistances,
 and capacitances where real values should be (VTR did not accept the concept of
-an 'ideal' FPGA and refused to route it). This commented file can be found in the Appendix
+an 'ideal' FPGA and refused to route it). This file can be found in the Appendix
 in Listing \ref{code:arch_des}
 and it produces the graphical representation found in Figure \ref{fig:vtr_arch}.
 
@@ -557,12 +594,12 @@ signals for the BLE implementation are missing from the architecture specificati
 These features are still in the HDL implementation of the device and still accessible via hand
 programming although they will be unknown (and unusable) to the VTR flow.
 
-\subsection{Example}
+\subsection{Example} \label{vtr_ex}
 
 The main example that will be used in this report is a simple sequence detector circuit
 with an output bus that drives a seven-segment display with the current state. This is
 a classic example of a FSM type of design although it only has 3 inputs (including clock)
-and 7 outputs. The design recognizes the 9-bit long sequence "101100101" which takes
+and 7 outputs. The design recognizes the 9-bit long sequence "101100100" which takes
 9 states (one for each bit of the sequence) and one additional state for an initial zero.
 This can be seen in more detail in the code listing for this example (Listing \ref{code:seq_det}).
 Figure \ref{fig:seq_det} showcases this example circuit implemented on the new architecture.
@@ -583,18 +620,131 @@ route designs.
 \newpage
 \section{Bitstream Generation}
 
-\subsection{VTR File Parsing}
+The main software tool which was produced for this project was the bitstream generation
+tool. The 2 objectives for this piece of software are: parse and make sense of the VTR
+output files, and output this virtual representation of the implemented design into a
+bitstream which will program the device. The first of these objectives proved to a
+rigorous exercise in reading sparse documentation and handling minute differences in
+the architecture specified architecture and the real Verilog architecture.
 
-\subsection{Design}
+The first of these output files is the Berkeley Logic Interchange Format (BLIF).
+This file describes (at a high level) what the inputs, outputs, and each of the outputs
+are calculated. This
+file is created with the overall architecture LUT size in mind so the logic descriptions
+can be directly parsed as LUT settings. It also specifies which of the BLE's flip flops are
+used.
+
+The next file to be parsed is the place file (.place). This file is the simplest to be
+parsed and only contains a description of what internal names (used in the net file)
+correspond to which coordinates within the architecture. Once the coordinates are known
+the type of block can be determined. This file also allows a quick way to see where each
+of the IO's were placed (bank [NESW], subblock[0-4]) for easy reading off for testbench
+setup.
+
+After the place file, the route file (.route) is parsed. For each net that uses global
+routing resources an entry is created in this file to describe what the source, sink and
+the switch path which is taken to connect those points together (switches, tracks used, etc).
+
+The final and most extensive output file that is parsed is the .net file. This is a XML based
+file which enumerates
+every non-switch block in the architecture and maps the implementation details of each of them.
+The net file provides the glue which allows all of the previously parsed information to be
+combined and put into a virtual representation of the architecture, like which IO's are
+inputs or outputs, which logic cluster each net's LUT is placed, and which signals to send
+to which BLE's.
+
+During the parsing of the net file, an 'FPGA' object is created and filled out with
+the various settings described in the VTR output files. Once the parsing is complete,
+the FPGA object is prompted to print out all of the settings it contains in a valid bitstream.
+
+This software was written using Java. This decision was made due to it being somewhat
+similar to C but also providing much more extensive library support for all of the
+string and XML parsing tasks required. This decision kept the line count at a reasonable
+while still providing a lot of functionality. 
 
 \newpage
 \section{Circuit Verification}
 
+\subsection{Architecture}
+
+Verification/bug fixing this circuit was a very difficult task due to the sheer number of signals
+as well as the overall complexity of the circuit. Debugging and verifying this circuit
+consisted in the repetition of (1) identifying there was an error (2) identifying where
+the incorrect signal originated (2) identifying the source of the incorrect signal
+(3) figuring out why an incorrect configuration was produced and fixing the parsing
+tool to handle it in the future. This process was made time consuming because of
+the difficulty in tracking signals through the architecture and comparing that to where
+they were supposed to be. This required the simultaneous use of Vivado (testbench simulation),
+IntelliJ (Bitstream Java development), and the interactive VTR graphical tool (to see what
+the correct settings should be) in order to identify and fix bugs.
+
+The testbench for this circuit uses the same FSM design from Section \ref{vtr_ex}.
+As can be seen in the testbench code (Listing \ref{code:tb}) the actual FSM Verilog
+file was, in addition to being implemented on the FPGA being verified, was also
+instantiated in the simulator so that the correct output could be known very easily. In addition,
+an additional logic block is included in the test bench to convert the seven segment
+display formatted output into a regular number representation.
+
+The following timing diagrams were generated from the Vivado simulator, the programming
+signals are omitted as looking at a stream of 1480-bits is not an effective use of space
+in this report. The first
+diagram (Figure \ref{fig:zero_to_9}) shows the state machine advance through all of
+its internal states as the desired sequence is passed into the design ("101100100")
+one by one. The "led\_out" signal is the output from the FPGA while the "correct" signal
+is the simulation software's interpretation of the FSM design. The "state" signal is
+the converted "led\_out" value into a regular number. It can be seen clearly that
+the FPGA output is always consistent with the correct output.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{zero_to_9}
+    \caption{Output of sequence detector testbench}
+    \label{fig:zero_to_9}
+\end{figure}
+
+Next an incorrect sequence will be fed into the state machine in Figure \ref{fig:break_early}.
+"100" are the first
+three bits fed into the FSM. This will cause the design to advance to state 2 (on the
+2nd bit) but then fall to state zero after reading the 3rd bit due to it being incorrect.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{break_early}
+    \caption{Output of sequence detector testbench}
+    \label{fig:break_early}
+\end{figure}
+
+The next simulation shows 
+the bits "1011011001000" being fed into the FSM. This causes the behavior of advancing
+from state 1 to 5 and then falling back to 3 before advancing to state 9. This happens
+due to the error in state 5. The next bit should be a 0, but a 1 is given. Instead of
+going back to state 1 however, the last 3 bits entered match with state 3 (which represents
+the pattern "101"). The next bits are then entered correctly until the sequence is matched.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{break_and_continue}
+    \caption{Output of sequence detector testbench}
+    \label{fig:break_and_continue}
+\end{figure}
+
+The final simulation shows the use of the reset input. The correct sequence is fed into
+the FSM and before it can advance to the 6th state the reset pin is set to 1. Notice that
+the correct output and the FPGA output diverge from the reset going high until the next
+rising edge of the clock. This is due to the reset being specified as asynchronous in the
+Verilog design, while the FPGA architecture is unable to implement such constructs. All
+flip flops in any implemented designs are tied to the same global clock line.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{reset}
+    \caption{Output of sequence detector testbench}
+    \label{fig:reset}
+\end{figure}
+
 \subsection{Basic Logic Element}
 
 \subsection{Connection Box}
-
-\subsection{Logic Cluster}
 
 \subsection{Switch Block}
 
@@ -619,7 +769,7 @@ route designs.
 
 \subsection{Design Code Listing}
 
-\lstinputlisting[language=Verilog, caption={Basic logic element code}, label={code:ble}]{../src/logic_element.v}
+\lstinputlisting[language=Verilog, caption={Basic logic element code}, label={code:BLE}]{../src/logic_element.v}
 
 \subsection{Testbench Code Listing}
 

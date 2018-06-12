@@ -12,7 +12,24 @@ public class BitGen {
         RouteFile route = RouteFile.parseRouteFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.route");
         FPGA fpga = NetFile.parseNetFile("/home/jprachar/fpga/vtr/adder_4bit.pre-vpr.net", blif, place, route);
 
+        System.out.println("FPGA");
         PrintDataStream(fpga.GetProgStream());
+        System.out.println("IO Block");
+        PrintDataStream(fpga.subModules[0].GetProgStream());
+        System.out.println("Connection box (output)");
+        PrintDataStream(fpga.subModules[22].GetProgStream());
+        System.out.println("Connection box (input)");
+        PrintDataStream(fpga.subModules[28].GetProgStream());
+        System.out.println("Connection box (lc out)");
+        PrintDataStream(fpga.subModules[24].GetProgStream());
+        System.out.println("Switch");
+        PrintDataStream(fpga.subModules[21].GetProgStream());
+        System.out.println("Logic Cluster");
+        PrintDataStream(fpga.subModules[26].GetProgStream());
+        System.out.println("Interconnect Matrix");
+        PrintDataStream(fpga.subModules[26].subModules[0].GetProgStream());
+        System.out.println("BLE");
+        PrintDataStream(fpga.subModules[26].subModules[1].GetProgStream());
 
         return;
 
