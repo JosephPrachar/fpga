@@ -43,7 +43,7 @@
     citecolor=black,
     filecolor=black,
     linkcolor=black,
-    urlcolor=black
+    urlcolor=blue
 }
 
 \begin{document}
@@ -78,9 +78,7 @@ Under the guidance of\\
 {Department of Computer Engineering}\\
 \normalsize
 \textsc{ California Polytechnic State University, San Luis Obispo }\\
-March 2018\\
-\textcolor{red}{\textbf{VERSION 0.4}}
-
+June 2018\\
 
 \end{center}
 
@@ -89,15 +87,15 @@ March 2018\\
 \begin{abstract}
 This paper seeks to describe the process of developing a new FPGA architecture from 
 nothing, both in terms of knowledge about FPGAs and in initial design material. Specifically,
- this project set out to design an FPGA architecture which could implement a simple 
-state machine type design with less than 10 inputs, less than 10 outputs and less 
-than 10 states. The open source Verilog-to-Routing FPGA CAD flow tool was used in order to
-synthesize, place, and route HDL files onto the architecture. The hardware implementation of this project was completed
-making use of the cadence suite of software tools (mainly Gennus, Innovus, and Virtuoso)
-and Global Foundries CMRF8SF 130nm process.
-This project was completed in terms of the original goals and proved to be limited by
-the general place and route algorithm, when a much more specific algorithm should have been
-used for such a routing constrained architecture.
+this project set out to design an FPGA architecture which can implement a simple 
+state machine type design with 10 inputs, 10 outputs and 10 states.
+The open source Verilog-to-Routing FPGA CAD flow tool was used in order to
+synthesize, place, and route HDL files onto the architecture. 
+This project was completed in terms of the spirit of the original goals of implementing
+an FPGA from scratch. Although, the project resulted in an architecture which slightly underperformed
+in its ability to route 100\% of 10 input, 10 output, 10 state designs due to 
+the general place and route algorithm used and the lack of non-contrived 10 input
+10 output 10 state FSM designs.
 
 \end{abstract}
 \newpage
@@ -105,8 +103,6 @@ used for such a routing constrained architecture.
 \tableofcontents
 \newpage
 \listoffigures
-\newpage
-\lstlistoflistings
 \newpage
 
 \section{Introduction}
@@ -117,12 +113,11 @@ FPGA’s are some of the most complicated digital circuits on the market today. 
 can help companies build a custom digital circuit with years less development time 
 compared to an ASIC design process. This project aims to be an exploratory exercise
 into the implementation details of the FPGA through the creation 
-of a basic FPGA architecture. This new architecture will be extremely simple in nature 
-due to the vastly intricate circuit that needs to be created and the complex software 
-required to route designs within it.
+of a basic FPGA architecture. This new architecture will be simple in nature yet still
+achieve all of the major hallmarks of an FPGA, most importantly being in-circuit reconfigurable.
 
 This project will focus on pulling together the many basic overviews provided by 
-the research sources listed in the bibliography <cite unused articles here>. The main technical overview that will 
+the research sources listed in the bibliography. The main technical overview that will 
 be used to guide the development of this new architecture is Muhammad Imran Masud’s
 master's thesis (FPGA Routing Structures: A Novel Switch Block and Depopulated 
 Interconnect Matrix Architectures) \cite{masud_1999}. Masud provides a wealth of general overview details 
@@ -138,7 +133,7 @@ time requirement of this project. A large amount of time must also be spent veri
 this design, which will provide much practice with simulation/verification software 
 due to the complicated nature of this circuit. The individual blocks of this circuit 
 should be straightforward to test, but when performing system level testing, a design 
-must first be created and loaded into the fpga which presents an interesting challenge.
+must first be created and loaded into the FPGA which presents an interesting challenge.
 This challenge leads into the last part of this project, tool development. As this 
 is a completely new FPGA architecture, completely new place, route, and bitstream generation tools must 
 be created in order to implement designs and actually use this project. Fortunately,
@@ -146,13 +141,17 @@ early on in the development of this project, the open source Verilog-to-Routing 
 tool was discovered. This mean that the exceptionally complicated place and route component
 of this project did not need to be created from scratch. Together, the three separate
 components of this project (design, test, and software tools) come together to provide an
-excersise encompassing a large breadth of the computing field.
+exercise encompassing a large breadth of the computing field.
 
-\subsection{Basic Logic Element}
+The following sections of the Introduction section will consist of a brief overview
+of the basics of the different blocks of FPGA's as well as how they fit together in
+an architecture.
+
+\subsection{Basic Logic Element} \label{sec:intro_ble}
 
 The most fundamental of all parts of an FPGA architecture is the basic logic element 
-(BLE). The BLE is the component which actually does the computation in the circuit.
-BLE’s are made up of a combination of look-up tables and flip flops. Given enough 
+(BLE). The BLE is the component which does the computation in the circuit.
+BLE’s are made up of a combination of configurable look-up tables and flip flops. Given enough 
 of these BLE’s, any digital circuit can be created; this provides the 
 basic foundation for the FPGA’s circuit emulation capabilities.
 
@@ -193,7 +192,7 @@ architecture (Figure \ref{fig:complex_ble}) \cite{xilinx_xc4000}. This allows th
 routing software to use this BLE as 2 separate 4-LUT 
 BLE’s or one larger 5-LUT BLE, thereby partially circumventing the inefficiency problem. 
 
-\subsection{Connection Box}\label{Conn_Box}
+\subsection{Connection Box}\label{Conn_Box}\label{sec:intro_conn}
 
 \begin{figure}[ht]
   \centering
@@ -228,7 +227,7 @@ global routing resources and local routing resources. A Logic Cluster is simply 
 group of BLE’s combined with a connection box (now referred to as an interconnect matrix)
 so that a more complex operation 
 can be performed without being routed through the general interconnect. Usually, 
-there are 4 to 16 BLE’s per Logic Cluster which all have their outputs connected 
+there are 4 to 16 BLE’s per Logic Cluster \cite{masud_1999} which all have their outputs connected 
 as inputs into the main interconnect matrix as well as out of the module (into the 
 general interconnect). This enables other BLE’s in the same logic cluster to use 
 those outputs, enabling more complicated designs to be created without using global 
@@ -259,9 +258,12 @@ domain. For example, if 4 10-bit buses are using a disjoint switch block as an i
 the first wire in the top bus can only be connected to the first wire in the other 
 3 buses, not any of the other wires. This does decrease route-ability due to having 
 separate domains but is also a very predictable and easily understandable strategy.
-Other strategies (such as the wilson or universal patterns) create several orders 
+Other strategies (such as the Wilson or universal patterns) create several orders 
 of magnitudes greater number of possible routes to get from point to point and thus 
-require much more complicated routing algorithms.
+require much more complicated routing algorithms. The main example of this point is that
+with a disjoint switch block based fabric, once a signal is in the fabric it will always
+remain on the same track. This is not true for the other switch patterns and allows for
+less assumptions to be made about track use throughout the fabric. 
 
 \subsection{Input/Output Block}
 
@@ -297,15 +299,15 @@ When all of these types of previously discussed blocks are put together into a c
 design, the result looks something like the architecture in Figure \ref{fig:island_style}.
 The logic clusters (which
 feature the computational elements and are labeled CLB for configurable logic block in this
- diagram) act as the 'islands' while the general interconnect
-resides in the channels in between. At each crossing of vertical and horizontal fabric
+ diagram) act as the 'islands' while the general interconnect fabric
+resides in the channels in between. The term fabric will be used throughout this report
+and is a general term to refer to the both the buses of wires connecting each switch block
+and the switch blocks themselves. At each crossing of vertical and horizontal fabric
 buses a switch block is placed to allow the connection of different bus wires. This is
 the most popular style of FPGA currently in use today due to its vast amount of routing
 resources and repetitive design elements.
 
-
-\newpage
-\section{Design Overview}
+\subsection{Design Approach}
 
 This new FPGA architecture, at a high level, will consist of three types of blocks:
 IO, switch, and logic cluster. Each of these blocks will be completely configurable 'in circuit'
@@ -320,11 +322,11 @@ which fits onto the architecture may be implemented.
 
 This project consists of essentially three parts of equal time and value: circuit 
 design, circuit validation, and implementation tools. This document contains many 
-arbitrary design decisions. From research, it is clear what a generalized FPGA design 
+design decisions. From research, it is clear what a generalized FPGA design 
 looks like and how it is routed. What has become increasingly difficult is specifying 
 the actual values of the device. Width of interconnect buses, interconnect redundancy,
-and routing connectedness to IO blocks are all examples of things that are very 
-much “hand waved” based on all available research. The following 
+and routing connectedness to IO blocks are all examples of things that are educated guesses
+based on all available research. The following 
 sections represent a rough hashing out of such values. These were constantly 
 re-evaluated throughout the design process to insure that each value provides a meaningful 
 connection towards the final 10-input, 10-output, 10-state FSM implementation goal.
@@ -348,9 +350,22 @@ clock signals and fed into flip flops where multiple clocks can be selected from
 would create additional complexity vs a FSM targeted system where the next state is
 updated on each clock rising edge.
 
+\subsection{Report Organization}
+
+The following pages of the report will consist of the design sections followed by
+verification and finally the conclusion. The design section will begin with the
+low level hardware specification of the FPGA itself (Section \ref{sec:design}) and
+move towards the software tools with each section thereafter. The design section
+will be followed by Section \ref{sec:vtr} which will cover the integration of the open source
+Verilog-to-Routing place and route tool into this project. The bitstream generation tool will be discussed
+next in Section \ref{sec:bitstream}. After the three design sections, the verification
+section (Section \ref{sec:verification}) will show the FPGA and toolset in action with
+a select set of Verilog designs. Lastly, the
+conclusion will review the final results of the project, highlighting some important
+points brought up in the design and verification sections.
 
 \newpage
-\section{Circuit Design}
+\section{Circuit Design} \label{sec:design}
 
 \subsection{Architecture}
 
@@ -362,9 +377,9 @@ updated on each clock rising edge.
 \end{figure}
 
 The design of this architecture attempts to mimic the well established island FPGA 
-architecture from Section \ref{Architecture} although it is too small to really draw parallels between the two.
+architecture from Section \ref{Architecture}. 
 The specific internal block diagram for this project can be seen in Figure \ref{fig:internal_block},
-made up from 20 IO blocks, 5 switch blocks, 12 connection boxes, and 4 logic clusters.
+made up of 20 IO blocks, 5 switch blocks, 12 connection boxes, and 4 logic clusters.
 The fabric of the FPGA is 10 wires wide represented
 by the thicker lines connecting the switch blocks and connection boxes.
 
@@ -390,7 +405,7 @@ consume a maximum of 10\% of the total global wires).
 On an implementation note, the use of tri-state buses is prevalent throughout this Verilog
 design as the entire FPGA fabric is based on the idea of configurable bidirectional buses
 between each of the switches. From this use of tri-state comes additional complexity in
-terms of creating the bitstream with defaults that ensure when a prog mux is not configured
+terms of creating the bitstream with defaults that ensure when a programmable multiplexer is not configured
 from its default state (zero's) that it does not drive the wire it is connected to.
 This was accomplished with the creation of a high z line which is connected to each non-interconnect
 matrix connection box's zero bit input. This ensures that the hardware design supports the idea
@@ -433,16 +448,19 @@ bitstream to specify an implemented design for this architecture.
     \label{fig:ble}
 \end{figure}
 
-The design of the BLE block is very basic. The block design can be seen in Figure 
-\ref{fig:ble} and the verilog code can be found in the code listing section of the
-appendix (Figure \ref{code:ble}). The BLE contains 3 2-bit muxes,
+The basic logic element, as discussed in Section \ref{sec:intro_ble}, is the computational
+center of the FPGA, it contains the look up tables and the memory storage elements.
+The design of the BLE block used in this project is very basic. The block design can be seen in Figure 
+\ref{fig:ble} and the verilog code can be found \href{https://github.com/JosephPrachar/fpga/blob/master/src/logic_element.v}{here}.
+The BLE contains 3 2-bit muxes,
 1 16-bit mux, and 2 19-bit shift registers, 16-bits of which are used in the
 4-LUT. The remaining 3 bits are used to: enable the feedback path from the flip flop 
 to input A of the 4-LUT, enable the use of input D as the enable input to the flip 
 flop, and lastly to select the flip flop as output or the 4-LUT as the output. This 
 design will aid in simplicity of circuit verification and in implementation routing.
 The addition of two sets of shift registers was discovered to be required during 
-simulation as the circuit would enter into invalid states while being programmed. 
+simulation as the circuit would enter into invalid states while being programmed and cease
+to continue simulating. 
 To combat this problem, there are two banks of shift registers. The first is used 
 only while the device is being programmed (as told by the prog{\_}enable signal). The 
 second is only filled when the final control signals are in the programming shift 
@@ -458,6 +476,8 @@ bits to fully specify BLE functionality.
     \label{fig:prog_mux}
 \end{figure}
 
+The connection box, as discussed in Section \ref{sec:intro_conn}, is the way in which signals
+get onto and out of the fabric buses of the FPGA. 
 The connection box implementation is based on the combination of many less complicated
 logic blocks called programmable multiplexers (prog mux). A prog mux is simply a mux combined with
 a shift register which is in the configuration chain of the FPGA. This enables the logic
@@ -469,7 +489,9 @@ Once the prog mux block is created, the design for a connection box is relativel
 as described in Section \ref{Conn_Box}. A prog mux is created for each output pin. The
 size (number of select bits) of the prog mux is determined by taking the ceiling of
 the log base 2 of the number of inputs.
-The use of Verilog parameters (as seen in Listing \ref{code:prog_mux} and Listing \ref{code:conn_box})
+The use of Verilog parameters (as seen
+\href{https://github.com/JosephPrachar/fpga/blob/master/src/prog_mux16.v}{here} and
+\href{https://github.com/JosephPrachar/fpga/blob/master/src/conn_box.v}{here})
 makes both the connection box and the prog mux reusable
 throughout the rest of the HDL design.
 
@@ -508,7 +530,8 @@ how everything fit together.
 \subsection{Switch Block}
 
 The switch block design uses the disjoint connection pattern to create the simplest
-possible fabric structure. The block has 4 10-bit wide bus connections which are all
+possible fabric structure to connect each of the individual buses in the FPGA fabric.
+The block has 4 10-bit wide bus connections which are all
 bidirectional. The internal makeup of the switch block is (like the connection box) just
 made up of many prog muxes driving the output pins of each pin of the bus connections with
 an additional connection for not driving the output (High Z). To fully specify the configuration
@@ -526,14 +549,15 @@ and static digital simulation. Due to the simplicity of this block, only 3 bits 
 required to program the IO block.
 
 \newpage
-\section{Verilog-to-Routing}
+\section{Verilog-to-Routing} \label{sec:vtr}
 
 \subsection{Introduction}
 
 Verilog-to-Routing (VTR) \cite{vtr} is the premiere open source FPGA CAD flow for FPGA academic research.
 This tool allows any FPGA architecture to be worked on with the use of its architecture
 description language to specify every detail about the architecture.
-The fact that this tool was discovered aided the project tremendously due to how many
+The fact that this tool was discovered (through extensive background research) aided
+the project tremendously due to how many
 complex algorithms could be left to VTR to handle. VTR is comprised of 3 separate tools:
 Odin, ABC, and VPR. Odin is used to synthesize and elaborate Verilog files into 
 BLIF netlist files which can be
@@ -548,8 +572,8 @@ the software tools) the use of VTR was deemed to be a good decision for two main
 First, VTR is a sort of academic standard and provides all sorts of additional
 features (not used in this project) to help benchmark and compare FPGA architectures.
 Therefore, this was seen as a good opportunity to learn a new toolset in a hands-on manor for
-possible future projects in this area of study. Second, The algorithms that VTR handles
-are REALLY complex (NP-Hard) and also creates the opportunity
+possible future projects in this area of study. Second, the algorithms that VTR handles
+are complex (NP-Hard) and also creates the opportunity
 to implement Verilog designs instead of hand produced netlists and logic. Specifically the VPR tool
 provides a way to avoid writing a new place and route algorithm which would have
 been passable with this size of architecture but would have struggled with any increase
@@ -560,21 +584,21 @@ in size (as a good place and route algorithm could be a whole senior project on 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\textwidth]{vtr_arch}
-    \caption{VTR parse and rendering of new architecture}
+    \caption{VTR parse and stylized rendering of new architecture (programming signals omitted)}
     \label{fig:vtr_arch}
 \end{figure}
 
 In order to integrate with the VTR CAD flow both a Verilog file and an architecture
 description file must be
-provided. The Verilog is easy and marks a huge improvement over hand drawing circuits
+provided. The Verilog is straightforward and marks a huge improvement over hand drawing circuits
 and feeding them into a hand-written tool, but the architecture description language
 is a whole other concept to grasp. This language uses an XML format to specify every
 possible variable within an architecture including: setup-hold times, switch block
 connection strategy, block locations, BLE size, and much more. For this project, all
 timing information was deemed to be out of scope so there are placeholder times, resistances,
 and capacitances where real values should be (VTR did not accept the concept of
-an 'ideal' FPGA and refused to route it). This file can be found in the Appendix
-in Listing \ref{code:arch_des}
+an 'ideal' FPGA and refused to route it). This file can be found
+\href{https://github.com/JosephPrachar/fpga/blob/master/vtr/basic.xml}{here}
 and it produces the graphical representation found in Figure \ref{fig:vtr_arch}.
 
 As can be seen in Figure \ref{fig:vtr_arch}, there are slight differences in how VTR
@@ -583,14 +607,14 @@ These differences are mainly present in the fabric and switch block layout and a
 due to the lack of granularity control in specifying the location of the fabric and switch blocks.
 The VTR tool makes the assumption that the architecture being specified is a regular
 island type architecture (which has a very regular fabric structure) and spends much
-more effort in understanding the various complex blocks (IO, logic cluster, BLE, etc).
-This difference is entirely cosmetic as there is still a strict equivilance between
+more effort in understanding the various clb's (complex logic blocks: IO, logic cluster, BLE).
+This difference is entirely cosmetic as there is still a strict equivalence between
 the channels from the designed to the interpreted architectures which is important for
 generating the bitstream.
 
 Another notable diversion from the design specified is that many of the auxiliary control 
 signals for the BLE implementation are missing from the architecture specification file
-(internal feedback and flip flop enable) due to being able specify them in the architecture file.
+(internal feedback and flip flop enable) due to being unable specify them in the architecture file.
 These features are still in the HDL implementation of the device and still accessible via hand
 programming although they will be unknown (and unusable) to the VTR flow.
 
@@ -601,7 +625,8 @@ with an output bus that drives a seven-segment display with the current state. T
 a classic example of a FSM type of design although it only has 3 inputs (including clock)
 and 7 outputs. The design recognizes the 9-bit long sequence "101100100" which takes
 9 states (one for each bit of the sequence) and one additional state for an initial zero.
-This can be seen in more detail in the code listing for this example (Listing \ref{code:seq_det}).
+This can be seen in more detail in the code listing for this example (found
+\href{https://github.com/JosephPrachar/fpga/blob/master/vtr/seq_det.v}{here}).
 Figure \ref{fig:seq_det} showcases this example circuit implemented on the new architecture.
 Some notable observations include how the concept of input and output biased IO banks
 are not taken into account. Also it is surprising to see 100\% BLE utilization
@@ -618,17 +643,16 @@ route designs.
 \end{figure}
 
 \newpage
-\section{Bitstream Generation}
+\section{Bitstream Generation}\label{sec:bitstream}
 
 The main software tool which was produced for this project was the bitstream generation
 tool. The 2 objectives for this piece of software are: parse and make sense of the VTR
 output files, and output this virtual representation of the implemented design into a
-bitstream which will program the device. The first of these objectives proved to a
-rigorous exercise in reading sparse documentation and handling minute differences in
-the architecture specified architecture and the real Verilog architecture.
+bitstream which will program the device. The first of these objectives proved to be a
+rigorous exercise in reading sparse documentation.
 
 The first of these output files is the Berkeley Logic Interchange Format (BLIF).
-This file describes (at a high level) what the inputs, outputs, and each of the outputs
+This file describes (at a high level) what the inputs, outputs, and how each of the outputs
 are calculated. This
 file is created with the overall architecture LUT size in mind so the logic descriptions
 can be directly parsed as LUT settings. It also specifies which of the BLE's flip flops are
@@ -659,13 +683,11 @@ the FPGA object is prompted to print out all of the settings it contains in a va
 
 This software was written using Java. This decision was made due to it being somewhat
 similar to C but also providing much more extensive library support for all of the
-string and XML parsing tasks required. This decision kept the line count at a reasonable
+string and XML parsing tasks required. This decision kept the line count reasonable
 while still providing a lot of functionality. 
 
 \newpage
-\section{Circuit Verification}
-
-\subsection{Architecture}
+\section{Circuit Verification} \label{sec:verification}
 
 Verification/bug fixing this circuit was a very difficult task due to the sheer number of signals
 as well as the overall complexity of the circuit. Debugging and verifying this circuit
@@ -678,17 +700,67 @@ they were supposed to be. This required the simultaneous use of Vivado (testbenc
 IntelliJ (Bitstream Java development), and the interactive VTR graphical tool (to see what
 the correct settings should be) in order to identify and fix bugs.
 
+The next three subsections will provide simulation results for three different Verilog
+designs implemented on the new FPGA architecture. In order to run these simulations,
+first, a Verilog design was created
+(Example \href{https://github.com/JosephPrachar/fpga/blob/master/vtr/seq_det.v}{here}).
+Then, this Verilog file was run through the VTR toolset which outputs the files discussed
+in the previous section (.net, .place, .blif, .route). These output files are then used as
+inputs for the bitstream generation tool which then outputs a 1480-bit long bitstream.
+This bitstream is then copied into a testbench that instantiates the Verilog FPGA architecture
+and connects the inputs and outputs to the design as seen in the next 3 sections.
+
+\subsection{Adder}
+
+This adder circuit is one of the simplest designs that an FPGA can implement which still
+requires a moderate amount of intermediate nets to route. As seen in Figure \ref{fig:adder}
+there is an 'out' signal as well as a 'correct' signal. The out signal comes directly from the
+Verilog FPGA while the 'correct' signal is computed by the simulator. The programming signals
+are omitted due to length and lack of clarity added (a zoomed out screenshot of a design being programmed
+can be seen in
+Section \ref{sec:sec_dec}). Notice all test cases showing equal results between the computed output
+and the correct output.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{adder}
+    \caption{Output of 4-bit adder testbench}
+    \label{fig:adder}
+\end{figure}
+
+\subsection{Register}
+
+The next example circuit is a simple set-clear register to demonstrate the use of
+memory elements in the architecture. As with the previous adder example, both output
+and correct signals are provided for easy verification.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{sr_reg}
+    \caption{Output of register testbench}
+    \label{fig:sr_reg}
+\end{figure}
+
+\subsection{Sequence Detector} \label{sec:sec_dec}
+
 The testbench for this circuit uses the same FSM design from Section \ref{vtr_ex}.
-As can be seen in the testbench code (Listing \ref{code:tb}) the actual FSM Verilog
-file was, in addition to being implemented on the FPGA being verified, was also
-instantiated in the simulator so that the correct output could be known very easily. In addition,
-an additional logic block is included in the test bench to convert the seven segment
+As can be seen in the testbench code (found
+\href{https://github.com/JosephPrachar/fpga/blob/master/tb/fpgavs2_tb.v}{here}) the actual FSM Verilog
+file was, in addition to being implemented on the FPGA, also
+instantiated in the simulator so that the correct output could be known easily. In addition,
+a logic block is included in the test bench to convert the seven segment
 display formatted output into a regular number representation.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{prog_signals}
+    \caption{Programming the sequence detector testbench}
+    \label{fig:prog}
+\end{figure}
+
 The following timing diagrams were generated from the Vivado simulator, the programming
-signals are omitted as looking at a stream of 1480-bits is not an effective use of space
-in this report. The first
-diagram (Figure \ref{fig:zero_to_9}) shows the state machine advance through all of
+signals are shown in Figure \ref{fig:prog} at a very high level. Figure \ref{fig:zero_to_9}
+ shows the state machine advance through all of
 its internal states as the desired sequence is passed into the design ("101100100")
 one by one. The "led\_out" signal is the output from the FPGA while the "correct" signal
 is the simulation software's interpretation of the FSM design. The "state" signal is
@@ -742,16 +814,49 @@ flip flops in any implemented designs are tied to the same global clock line.
     \label{fig:reset}
 \end{figure}
 
-\subsection{Basic Logic Element}
-
-\subsection{Connection Box}
-
-\subsection{Switch Block}
-
-\subsection{Input/Output Block}
-
 \newpage
-\section{Conclusion}
+\section{Conclusion} \label{sec:conclusion}
+
+Overall, this project was a success in spirit but slightly missed the stated goal of
+creating a 10-input 10-output 10-state capable FPGA architecture. The main reason that
+this project fell slightly short is that the FSM target really needed a contrived
+example design to meet the 10 input, 10 output requirements as FSM designs typically
+rely on smaller amounts of inputs and outputs. This was partially overcome through the
+sequence detector example due to the internal state being converted to a seven segment
+display format which occupied more output pins. Still this design fell short of being
+able to implement an FSM with the 10-inputs and 10-outputs originally desired.
+
+This small failure however, does not truly impact the usability of the design as the
+majority of 10-state FSM's will not require that many IO's. This points to a small design flaw
+in which the ratio of logic resources to IO's is not optimal, however future designers
+should be weary of decreasing the number IO's too much as it could have the impact of
+reducing the routeability of the architecture due to decreasing
+the number of IO pins in desirable areas and therefore increasing the need for global
+routing resources.
+
+The next reason that this project fell slightly short of it's goals is that the
+FSM design hoping to be implemented onto this architecture needs to be manipulated and
+"worked" in order to fit in the architecture. This can be seen by the fact that the
+sequence decoder example utilized 100\% of available logic resources and two fabric buses
+above 80\% of available track resources. In fact, just switching the desired pattern from "101100100" to
+"101100101" caused the design to be unroutable. This means that the desired FSM design
+size has a possibility of fitting onto this architecture, but there is a large
+subset of designs which have 10 states which will not fit on this architecture.
+
+This utilization difficulty is caused to a substantial degree by the VTR place and route
+algorithm. As pointed out in the VTR section, upon inspection of the implemented sequence
+detector design, many of the IO blocks have not been placed in ideal locations. Inputs/Outputs seem
+to be placed in a somewhat random fashion, with little regard to the design's IO biases.
+It was not uncommon to see an output from the NE logic cluster be routed all the way across
+the chip to the west IO bank. This is likely due to the general purpose nature of the algorithm
+where a more specific place and route algorithm would have performed better on this
+architecture.
+
+Aside from these two slight failures, the rest of the project went successfully. The
+ability to implement a select group of medium sized FSM designs onto a completely new
+FPGA architecture designed in Verilog with the ability to program the device 'in-circuit'
+with a custom bitstream generation tool integrated with the academic standard of place
+route tools should not be understated.
 
 \newpage
 \bibliography{fpga_report}{}
@@ -763,18 +868,6 @@ flip flops in any implemented designs are tied to the same global clock line.
 
 \subsection{Github}
 
-\subsection{Architecture Description File}
-
-\lstinputlisting[language=xml,caption={Architecture description file}, label={code:arch_des}]{../vtr/basic.xml}
-
-\subsection{Design Code Listing}
-
-\lstinputlisting[language=Verilog, caption={Basic logic element code}, label={code:BLE}]{../src/logic_element.v}
-
-\subsection{Testbench Code Listing}
-
-
-\subsection{Bitstream Generator Code Listing}
-
+The github project can be found at this URL: \url{https://github.com/JosephPrachar/fpga}
 
 \end{document}

@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module fpgavs2_tb();
+module fpgavs2_tb_seq_det();
     reg prog_in;
     reg prog_clk;
     reg prog_en;

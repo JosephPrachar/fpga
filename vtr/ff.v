@@ -1,4 +1,4 @@
-module adder(clk, set, clear, q);
+module sc_reg(clk, set, clear, q);
     input clk;
     input set;
     input clear;
